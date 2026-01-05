@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaArrowLeft, FaUserGraduate, FaFilter, FaTimes ,FaFileCsv  } from "react-icons/fa";
+import { FaArrowLeft, FaUserGraduate, FaFilter, FaTimes ,FaFileCsv ,FaFileDownload  } from "react-icons/fa";
 
 export default function StudentsManagement() {
   const navigate = useNavigate();
@@ -275,6 +275,61 @@ const exportStudentsToCSV = () => {
   link.click();
   document.body.removeChild(link);
 };
+const exportMasterStudentsCSV = async () => {
+  try {
+    const res = await fetch(
+      "http://localhost:5000/admin/students/master-export",
+      {
+        headers: {
+          "College-Id": collegeId,
+        },
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok || !data.length) return;
+
+    const headers = [
+      "Name",
+      "Email",
+      "Department",
+      "Year",
+      "Semester",
+      "Chat Sessions",
+      "Queries"
+    ];
+
+    const rows = data.map(s => [
+      s.name,
+      s.email,
+      s.department,
+      s.year ?? "",
+      s.semester ?? "",
+      s.sessions ?? 0,
+      s.queries ?? 0
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => r.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "students_master_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error("Master export failed", err);
+  }
+};
+
 const role = localStorage.getItem("admin_role");
 
 if (role !== "campus_admin") {
@@ -361,6 +416,15 @@ function ProfileField({ label, value, highlight }) {
             </small>
           </div>
         </div>
+        {/* RIGHT SIDE – MASTER DATA */}
+<button
+  className="btn btn-sm btn-outline-light d-flex align-items-center gap-2"
+  onClick={exportMasterStudentsCSV}
+>
+  <FaFileDownload   />
+ Master Data
+</button>
+
       </div>
 
       {/* ===== STUDENTS ANALYTICS ===== */}
