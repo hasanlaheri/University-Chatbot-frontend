@@ -704,25 +704,17 @@ setSessions(prev => [
 
       return (
         <div
-          key={s.id}
-          onClick={() => {
-            setCurrentSessionId(s.id);
-            const user = JSON.parse(localStorage.getItem("user"));
-            navigate(`/${user.college_code.toLowerCase()}/${user.role}/chat/${s.id}`);
-          }}
-          onMouseEnter={() => setHoverId(s.id)}
-          onMouseLeave={() => setHoverId(null)}
-          style={{
-            background: isActive ? "#3f4a5a" : "#2c323c",
-            borderLeft: isActive ? "4px solid #0d6efd" : "4px solid transparent",
-            borderRadius: "8px",
-            padding: "10px 12px",
-            marginBottom: "8px",
-            cursor: "pointer",
-            position: "relative",
-            transition: "background 0.2s ease",
-          }}
-        >
+  key={s.id}
+  className={`chat-session ${isActive ? "active" : ""}`}
+  onClick={() => {
+    setCurrentSessionId(s.id);
+    const user = JSON.parse(localStorage.getItem("user"));
+    navigate(`/${user.college_code.toLowerCase()}/${user.role}/chat/${s.id}`);
+  }}
+  onMouseEnter={() => setHoverId(s.id)}
+  onMouseLeave={() => setHoverId(null)}
+>
+
           {/* CHAT TITLE */}
           {editingId === s.id ? (
         <input
@@ -917,7 +909,7 @@ setSessions(prev => [
 
 
 {/* HEADER */}
-<div className="p-3 border-bottom d-flex align-items-center gap-2 bg-white">
+<div className="chat-header">
   {isSidebarOpen && (
     <button
       className="btn btn-outline-secondary"
@@ -935,7 +927,7 @@ setSessions(prev => [
 
 
   {/* FILTER BAR (fixed) */}
-  <div className="p-2 border-bottom bg-white d-flex gap-2">
+  <div className="filter-bar">
 
     {/* MODE */}
     <select
