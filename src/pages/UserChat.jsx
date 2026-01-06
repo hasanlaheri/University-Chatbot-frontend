@@ -3,7 +3,8 @@ import '../App.css';
 import LogoutButton from "../components/LogoutButton";
 import ReactMarkdown from "react-markdown";
 import { useNavigate} from "react-router-dom";
-import { FaUserCircle, FaCheck, FaTimes, FaEdit } from "react-icons/fa";
+import { FaUserCircle, FaCheck, FaTimes, FaEdit,FaVolumeUp, FaStop} from "react-icons/fa";
+import { MdContentCopy } from "react-icons/md";
 import PasswordEye from "../components/PasswordEye";
 
 
@@ -44,6 +45,17 @@ const resetChangePasswordState = () => {
   });
 };
 const [showCurrentPass, setShowCurrentPass] = useState(false);
+const [speakingIndex, setSpeakingIndex] = useState(null);
+const isSpeechSupported =
+  "speechSynthesis" in window &&
+  typeof SpeechSynthesisUtterance !== "undefined";
+const stripMarkdown = (text) => {
+  return text
+    .replace(/```[\s\S]*?```/g, "") // remove code blocks
+    .replace(/[#*_`>-]/g, "")       // remove markdown symbols
+    .replace(/\n+/g, " ");          // normalize spacing
+};
+
 const [showNewPass, setShowNewPass] = useState(false);
 const [showConfirmPass, setShowConfirmPass] = useState(false);
 const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -72,7 +84,21 @@ const [profileForm, setProfileForm] = useState({
   semester: ""
 });
 const [departments, setDepartments] = useState([]);
+const [copiedIndex, setCopiedIndex] = useState(null);
+const copyToClipboard = async (text, index) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
 
+    setTimeout(() => {
+      setCopiedIndex(null);
+    }, 2000);
+  } catch (err) {
+    console.error("Copy failed", err);
+  }
+};
+
+const isNewSessionRef = React.useRef(false);
 const [typingSessionId, setTypingSessionId] = useState(null);
 useEffect(() => {
   // scroll ONLY if this session is active
@@ -106,16 +132,48 @@ const prevSessionRef = React.useRef(null);
 useEffect(() => {
   if (!currentSessionId) return;
 
-  // only clear if switching from another session
+  // 🚫 DO NOT clear messages if this is a newly created session
   if (
     prevSessionRef.current &&
-    prevSessionRef.current !== currentSessionId
+    prevSessionRef.current !== currentSessionId &&
+    !isNewSessionRef.current
   ) {
     setMessages([]);
   }
 
+  // reset flag after first render
+  isNewSessionRef.current = false;
+
   prevSessionRef.current = currentSessionId;
 }, [currentSessionId]);
+
+const speakText = (text, index) => {
+  // stop anything already speaking
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(stripMarkdown(text));
+
+  utterance.lang = "en-US"; // you can make this dynamic later
+  utterance.rate = 1;
+  utterance.pitch = 1;
+
+  utterance.onend = () => {
+    setSpeakingIndex(null);
+  };
+
+  setSpeakingIndex(index);
+  window.speechSynthesis.speak(utterance);
+};
+
+const stopSpeaking = () => {
+  window.speechSynthesis.cancel();
+  setSpeakingIndex(null);
+};
+useEffect(() => {
+  return () => {
+    window.speechSynthesis.cancel();
+  };
+}, []);
 
 
 
@@ -304,10 +362,15 @@ React.useEffect(() => {
 
     const data = await res.json();
 
-    // 🔥 IMPORTANT FIX
-    if (data.length > 0) {
-      setMessages(data);
-    }
+if (data.length > 0) {
+  setMessages(
+    data.map(m => ({
+      ...m,
+      final: m.role === "assistant"   
+    }))
+  );
+}
+
   }
 
   loadMessages();
@@ -361,23 +424,26 @@ async function sendMessage() {
   let sessionId = currentSessionId;
 
   if (!sessionId) {
-    const res = await fetch("http://localhost:5000/chat/new", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        Authorization: localStorage.getItem("token"),
-      },
-      body: JSON.stringify({ user_email: localStorage.getItem("email") }),
-    });
+  const res = await fetch("http://localhost:5000/chat/new", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      Authorization: localStorage.getItem("token"),
+    },
+    body: JSON.stringify({ user_email: localStorage.getItem("email") }),
+  });
 
-    const data = await res.json();
-    sessionId = data.session_id;
+  const data = await res.json();
+  sessionId = data.session_id;
 
-    setSessions(prev => [...prev, { id: sessionId, title: "New Chat" }]);
-    setCurrentSessionId(sessionId);
+  isNewSessionRef.current = true; // ✅ MARK NEW SESSION
 
-    navigate(`/${user.college_code.toLowerCase()}/${user.role}/chat/${sessionId}`);
-  }
+  setSessions(prev => [...prev, { id: sessionId, title: "New Chat" }]);
+  setCurrentSessionId(sessionId);
+
+  navigate(`/${user.college_code.toLowerCase()}/${user.role}/chat/${sessionId}`);
+}
+
   setInput("");
     if (textareaRef.current) {
     textareaRef.current.style.height = "38px";
@@ -980,20 +1046,69 @@ setSessions(prev => [
   >
 {messages.map((m, i) => (
   <div key={i} className={m.role === "user" ? "text-end" : "text-start"}>
-   <div
-  className="p-2 mb-2"
+<div
+  className="p-2 mb-2 position-relative"
   style={{
     background: m.role === "user" ? "#d1e7dd" : "#fff",
     display: "inline-block",
     borderRadius: "8px",
     maxWidth: m.role === "user" ? "75%" : "65%",
     wordWrap: "break-word",
-    textAlign: "left"         // 🔥 FIX CENTER ISSUE
+    textAlign: "left"
   }}
 >
+  <ReactMarkdown>{m.content}</ReactMarkdown>
+{m.role === "assistant" && m.final && (
+  <button
+    className="btn btn-sm btn-light"
+    style={{
+      position: "absolute",
+      bottom: "6px",
+      right: "6px",
+      padding: "4px 6px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+    title={copiedIndex === i ? "Copied" : "Copy"}
+    onClick={() => copyToClipboard(m.content, i)}
+  >
+    {copiedIndex === i ? (
+      <FaCheck size={12} color="#198754" />   // ✅ green check
+    ) : (
+     <MdContentCopy size={12} />
+    )}
+  </button>
+)}
+  {isSpeechSupported && m.role === "assistant" && m.final && (
+    <button
+      className="btn btn-sm btn-light"
+      style={{
+        position: "absolute",
+        bottom: "6px",
+        right: "36px", // space from copy icon
+        padding: "4px 6px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+      title={speakingIndex === i ? "Stop reading" : "Read aloud"}
+      onClick={() =>
+        speakingIndex === i
+          ? stopSpeaking()
+          : speakText(m.content, i)
+      }
+    >
+      {speakingIndex === i ? (
+        <FaStop size={12} color="#000000ff" />
+      ) : (
+        <FaVolumeUp size={12} />
+      )}
+    </button>
+  )}
 
-      <ReactMarkdown>{m.content}</ReactMarkdown>
-    </div>
+</div>
+
   </div>
 ))}
 
