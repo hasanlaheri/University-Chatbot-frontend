@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
-import '../App.css';
+import "../styles/chat.css";
 import LogoutButton from "../components/LogoutButton";
-import ReactMarkdown from "react-markdown";
+import Sidebar from "../components/chat/Sidebar";
+import ProfileModal from "../components/chat/ProfileModal";
+import ChatLayout from "../components/chat/ChatLayout";
 import { useNavigate} from "react-router-dom";
-import { FaUserCircle, FaCheck, FaTimes, FaEdit,FaVolumeUp, FaStop} from "react-icons/fa";
-import { MdContentCopy } from "react-icons/md";
-import PasswordEye from "../components/PasswordEye";
-
-
-
 
 export default function UserChat() {
   
@@ -20,7 +16,7 @@ export default function UserChat() {
 const [department_id, setDepartmentId] = useState("");
 const [year, setYear] = useState("");
 const [semester, setSemester] = useState("");
-const [setOriginalTitle] = useState("");
+const [originalTitle, setOriginalTitle] = useState("");
 const menuRef = React.useRef(null);
 const [filter, setFilter] = useState({
   mode: "",
@@ -175,6 +171,31 @@ useEffect(() => {
   };
 }, []);
 
+const handleDeleteAccount = async () => {
+  if (deletingAccount) return;
+
+  setDeletingAccount(true);
+
+  try {
+    const res = await fetch("http://localhost:5000/user/delete-account", {
+      method: "DELETE",
+      headers: {
+        Authorization: localStorage.getItem("token"),
+      },
+    });
+
+    if (!res.ok) {
+      setDeletingAccount(false);
+      return;
+    }
+
+    localStorage.clear();
+    window.location.href = "/";
+  } catch (err) {
+    console.error(err);
+    setDeletingAccount(false);
+  }
+};
 
 
 useEffect(() => {
@@ -643,893 +664,112 @@ useEffect(() => {
 
 
       
+
 {/* SIDEBAR */}
-<div
-  className={`sidebar ${
-    isSidebarOpen ? "sidebar-open" : "sidebar-collapsed"
-  }`}
->
-
-  {/* APP TITLE */}
-  <div className="mb-3">
-    <h5 className="fw-bold mb-1">🎓 University Chatbot</h5>
-    <small className="text-secondary">
-      {sessions.length} conversation{sessions.length !== 1 && "s"}
-    </small>
-  </div>
-
-  {/* NEW CHAT BUTTON */}
-  <button
-    className="btn btn-sm btn-light mb-3 w-100 fw-semibold"
-    onClick={async () => {
-      const res = await fetch("http://localhost:5000/chat/new", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "Authorization": localStorage.getItem("token"),
-        },
-        body: JSON.stringify({ user_email: localStorage.getItem("email") }),
-      });
-
-      const data = await res.json();
-      const sessionId = data.session_id;
-
-
-setSessions(prev => [
-  ...prev,
-  { id: sessionId, title: "New Chat" }
-]);
-
-
-      setCurrentSessionId(sessionId);
-
-      const user = JSON.parse(localStorage.getItem("user"));
-      navigate(`/${user.college_code.toLowerCase()}/${user.role}/chat/${sessionId}`);
-    }}
-  >
-    ➕ New Chat
-  </button>
-
-  {/* CHAT LIST */}
-  <div className="flex-grow-1 overflow-auto">
-    {sessions.length === 0 && (
-      <div className="text-center text-secondary mt-4">
-        <p className="mb-1">No conversations yet</p>
-        <small>Start a new chat to begin</small>
-      </div>
-    )}
-
-    {sessions.map((s) => {
-      const isActive = s.id === currentSessionId;
-
-      return (
-        <div
-  key={s.id}
-  className={`chat-session ${isActive ? "active" : ""}`}
-  onClick={() => {
-    setCurrentSessionId(s.id);
-    const user = JSON.parse(localStorage.getItem("user"));
-    navigate(`/${user.college_code.toLowerCase()}/${user.role}/chat/${s.id}`);
-  }}
-  onMouseEnter={() => setHoverId(s.id)}
-  onMouseLeave={() => setHoverId(null)}
->
-
-          {/* CHAT TITLE */}
-          {editingId === s.id ? (
-        <input
-  autoFocus
-  value={editingTitle}
-  onChange={(e) => setEditingTitle(e.target.value)}
-  onBlur={() => {
-    setEditingId(null);
-    setEditingTitle("");
-  }}
-  onKeyDown={(e) => {
-    if (e.key === "Enter" && editingTitle.trim()) {
-      saveRename(s.id);
-    }
-
-    if (e.key === "Escape") {
-      setEditingId(null);
-      setEditingTitle("");
-    }
-  }}
-  className="form-control form-control-sm"
+<Sidebar
+  isSidebarOpen={isSidebarOpen}
+  setIsSidebarOpen={setIsSidebarOpen}
+  sessions={sessions}
+  setSessions={setSessions}
+  currentSessionId={currentSessionId}
+  setCurrentSessionId={setCurrentSessionId}
+  hoverId={hoverId}
+  setHoverId={setHoverId}
+  menuId={menuId}
+  setMenuId={setMenuId}
+  editingId={editingId}
+  setEditingId={setEditingId}
+  editingTitle={editingTitle}
+  setEditingTitle={setEditingTitle}
+  setOriginalTitle={setOriginalTitle}
+  saveRename={saveRename}
+  delChat={delChat}
+  navigate={navigate}
+  user={user}
+  menuRef={menuRef}
+  setShowProfile={setShowProfile}
 />
-
-          ) : (
-            <div className="fw-semibold text-truncate">
-              💬 {s.title}
-            </div>
-          )}
-
-          {/* MENU */}
-          {hoverId === s.id && (
-        <div
-  className="chat-menu-btn"
-  onClick={(e) => {
-    e.stopPropagation();
-    setMenuId(s.id);
-  }}
->
-  ⋮
-</div>
-
-          )}
-{menuId === s.id && (
-  <div
-    ref={menuRef}
-    style={{
-      position: "absolute",
-      right: "8px",
-      top: "28px",
-      background: "white",
-      color: "black",
-      borderRadius: "6px",
-      padding: "4px 0",
-      zIndex: 10,
-      minWidth: "100px",
-    }}
-  >
-
-              <div
-                className="px-3 py-1 hover-bg"
-                style={{ cursor: "pointer" }}
-                onClick={() => {
-  setMenuId(null);
-  setEditingId(s.id);
-  setEditingTitle(s.title);
-  setOriginalTitle(s.title);
-}}
-
-              >
-                ✏️ Rename
-              </div>
-              <div
-                className="px-3 py-1 text-danger"
-                style={{ cursor: "pointer" }}
-                onClick={() => {
-                  setMenuId(null);
-                  delChat(s.id);
-                }}
-              >
-                🗑 Delete
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
-
-
-
-{/* FOOTER */}
-<div className="mt-auto d-flex align-items-center gap-3 px-2">
-  {/* PROFILE ICON */}
-  <FaUserCircle
-    size={40}
-    className="text-light cursor-pointer"
-    title="My Profile"
-    onClick={() => setShowProfile(true)}
-  />
-
-  {/* LOGOUT */}
-  <LogoutButton />
-</div>
-
-
-
-</div>
-
-
-{/* COLLAPSED ICON RAIL */}
-{!isSidebarOpen && (
-  <div className="sidebar-rail">
-    {/* Open Sidebar */}
-    <button
-      className="rail-btn"
-      title="Open sidebar"
-      onClick={() => setIsSidebarOpen(true)}
-    >
-      ☰
-    </button>
-
-    {/* New Chat */}
-    <button
-      className="rail-btn"
-      title="New Chat"
-      onClick={async () => {
-        const res = await fetch("http://localhost:5000/chat/new", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            Authorization: localStorage.getItem("token"),
-          },
-          body: JSON.stringify({
-            user_email: localStorage.getItem("email"),
-          }),
-        });
-
-        const data = await res.json();
-        setSessions(prev => [
-          ...prev,
-          { id: data.session_id, title: "New Chat" },
-        ]);
-        setCurrentSessionId(data.session_id);
-
-        const user = JSON.parse(localStorage.getItem("user"));
-        navigate(
-          `/${user.college_code.toLowerCase()}/${user.role}/chat/${data.session_id}`
-        );
-      }}
-    >
-      ➕
-    </button>
-
-    {/* Spacer */}
-    <div className="rail-spacer" />
-     <FaUserCircle
-    size={40}
-    className="text-light cursor-pointer"
-    title="My Profile"
-    onClick={() => setShowProfile(true)}
-  />
-
-    {/* Logout */}
-    <button
-      className="rail-btn danger"
-      title="Logout"
-      onClick={() => {
-        localStorage.clear();
-        window.location.href = "/";
-      }}
-    >
-      ⏻
-    </button>
-    
-  </div>
-)}
 
 
 
 {/* MAIN CHAT AREA */}
-<div
-  className="flex-grow-1 d-flex flex-column bg-light"
-  style={{
-    marginLeft: isSidebarOpen ? "260px" : "56px",
-    transition: "margin-left 0.3s ease",
-    height: "100vh",
-  }}
->
+<ChatLayout
+  isSidebarOpen={isSidebarOpen}
 
+  collegeName={collegeName}
+  isFilterIncomplete={isFilterIncomplete}
 
+  mode={mode}
+  setMode={setMode}
+  department_id={department_id}
+  setDepartmentId={setDepartmentId}
+  year={year}
+  setYear={setYear}
+  semester={semester}
+  setSemester={setSemester}
+  isAcademicMode={isAcademicMode}
+  departments={departments}
+  settings={settings}
+  fetchSettingsIfNeeded={fetchSettingsIfNeeded}
+  handleApply={handleApply}
 
+  messages={messages}
+  copyToClipboard={copyToClipboard}
+  copiedIndex={copiedIndex}
+  isSpeechSupported={isSpeechSupported}
+  speakingIndex={speakingIndex}
+  speakText={speakText}
+  stopSpeaking={stopSpeaking}
+  currentSessionId={currentSessionId}
+  typingSessionId={typingSessionId}
+  messagesEndRef={messagesEndRef}
 
-
-{/* HEADER */}
-<div className="chat-header">
-  {isSidebarOpen && (
-    <button
-      className="btn btn-outline-secondary"
-      onClick={() => setIsSidebarOpen(false)}
-    >
-      ❮
-    </button>
-  )}
-
-  <h5 className="fw-bold mb-0 text-truncate">
-    {collegeName || "University ChatBot"}
-  </h5>
-</div>
-
-
-
-  {/* FILTER BAR (fixed) */}
-  <div className="filter-bar">
-
-    {/* MODE */}
-    <select
-      className="form-select form-select-sm"
-      style={{ maxWidth: "150px" }}
-      value={mode}
-      onChange={(e) => setMode(e.target.value)}
-    >
-      <option value="">Mode</option>
-      <option value="Campus">Campus</option>
-      <option value="Academic">Academic</option>
-      <option value="Staff">Staff</option>
-      <option value="Sports">Sports</option>
-      <option value="Administration">Administration</option>
-      <option value="Scholarship">Scholarship</option>
-      <option value="Training and Placement">Training and Placement</option>
-    </select>
-
-    {/* DEPARTMENT */}
-<select
-  className="form-select form-select-sm"
-  style={{ maxWidth: "250px" }}
-  value={department_id}
-  onChange={(e) => setDepartmentId(e.target.value)}
-  disabled={mode !== "Academic"}
->
-  <option value="">Department</option>
-
-  {departments.map(d => (
-    <option key={d.id} value={String(d.id)}>
-      {d.name}
-    </option>
-  ))}
-
-  <option value="all">All</option>
-</select>
-
-
-    {/* YEAR */}
-<select
-  className="form-select form-select-sm"
-  style={{ maxWidth: "100px" }}
-  value={year}
-  disabled={!isAcademicMode}
-  onFocus={fetchSettingsIfNeeded}   // 👈 FETCH ON CLICK
-  onChange={(e) => {
-    setYear(e.target.value);
-    setFilter(prev => ({ ...prev, year: e.target.value }));
-  }}
->
-  <option value="">Year</option>
-
-  {settings ? (
-    Array.from({ length: settings.total_years || 0 }, (_, i) => (
-      <option key={i + 1} value={i + 1}>{i + 1}</option>
-    ))
-  ) : (
-    <option disabled>Loading...</option>
-  )}
-</select>
-
-
-
-
-    {/* SEMESTER */}
-<select
-  className="form-select form-select-sm"
-  style={{ maxWidth: "100px" }}
-  value={semester}
-  disabled={!isAcademicMode}
-  onFocus={fetchSettingsIfNeeded}   // 👈 FETCH ON CLICK
-  onChange={(e) => {
-    setSemester(e.target.value);
-    setFilter(prev => ({ ...prev, semester: e.target.value }));
-  }}
->
-  <option value="">Semester</option>
-
-  {settings ? (
-    Array.from({ length: settings.total_semesters || 0 }, (_, i) => (
-      <option key={i + 1} value={i + 1}>{i + 1}</option>
-    ))
-  ) : (
-    <option disabled>Loading...</option>
-  )}
-</select>
-
-
-
-
-    <button
-  className="btn btn-sm btn-primary ms-1"
-  style={{
-    boxShadow: isFilterIncomplete ? "0 0 6px 2px rgba(0, 123, 255, 0.6)" : "none",
-    transition: "box-shadow 0.3s ease-in-out"
-  }}
-  onClick={handleApply}
->
-  Apply
-</button>
-
-  </div>
-
-  {/* MESSAGES (only this scrolls) */}
-  <div
-    className="flex-grow-1 overflow-auto"
-    style={{ padding: "16px" }}
-  >
-{messages.map((m, i) => (
-  <div key={i} className={m.role === "user" ? "text-end" : "text-start"}>
-<div
-  className="p-2 mb-2 position-relative"
-  style={{
-    background: m.role === "user" ? "#d1e7dd" : "#fff",
-    display: "inline-block",
-    borderRadius: "8px",
-    maxWidth: m.role === "user" ? "75%" : "65%",
-    wordWrap: "break-word",
-    textAlign: "left"
-  }}
->
-  <ReactMarkdown>{m.content}</ReactMarkdown>
-{m.role === "assistant" && m.final && (
-  <button
-    className="btn btn-sm btn-light"
-    style={{
-      position: "absolute",
-      bottom: "6px",
-      right: "6px",
-      padding: "4px 6px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }}
-    title={copiedIndex === i ? "Copied" : "Copy"}
-    onClick={() => copyToClipboard(m.content, i)}
-  >
-    {copiedIndex === i ? (
-      <FaCheck size={12} color="#198754" />   // ✅ green check
-    ) : (
-     <MdContentCopy size={12} />
-    )}
-  </button>
-)}
-  {isSpeechSupported && m.role === "assistant" && m.final && (
-    <button
-      className="btn btn-sm btn-light"
-      style={{
-        position: "absolute",
-        bottom: "6px",
-        right: "36px", // space from copy icon
-        padding: "4px 6px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }}
-      title={speakingIndex === i ? "Stop reading" : "Read aloud"}
-      onClick={() =>
-        speakingIndex === i
-          ? stopSpeaking()
-          : speakText(m.content, i)
-      }
-    >
-      {speakingIndex === i ? (
-        <FaStop size={12} color="#000000ff" />
-      ) : (
-        <FaVolumeUp size={12} />
-      )}
-    </button>
-  )}
-
-</div>
-
-  </div>
-))}
-
-{currentSessionId &&
- typingSessionId === currentSessionId && (
-  <div className="text-start mb-3">
-    <div className="typing-indicator">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </div>
-)}
-
-
-<div ref={messagesEndRef} />
-
-
-    {messages.length === 0 && (
-      <p className="text-muted text-center mt-5">How Can I Assist You Today..?</p>
-    )}
-  </div>
-
-        {/* input area */}
-        
-<div
-  className="p-3 border-top bg-white"
-  style={{
-    position:"sticky",
-    bottom:0,
-    zIndex:20
-  }}
->
-
-<div
-  className="input-group align-items-end"
-  style={{ flexWrap: "nowrap" }}
->
-<textarea
-  ref={textareaRef}                 // 👈 IMPORTANT
-  className="form-control"
-  value={input}
-  placeholder={
-    !filter.mode
-      ? "Apply filters first"
-      : (filter.mode === "Academic" &&
- (!filter.department_id || !filter.year || !filter.semester))
-
-      ? "Apply department, year & semester first"
-      : "Type your question..."
-  }
-  onChange={(e) => {
-    setInput(e.target.value);
-    adjustTextareaHeight(e.target);
-  }}
-  onKeyDown={(e) => {
-    if (e.key === "Enter" && !e.shiftKey && !isFilterIncomplete) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }}
-  disabled={isFilterIncomplete}
-  rows={1}
-  style={{
-    resize: "none",
-    overflowY: "auto",
-    maxHeight: "120px",
-    minHeight: "38px",
-    lineHeight: "1.5",
-    boxSizing: "border-box"
-  }}
+  input={input}
+  setInput={setInput}
+  textareaRef={textareaRef}
+  adjustTextareaHeight={adjustTextareaHeight}
+  sendMessage={sendMessage}
 />
 
+     <ProfileModal
+  showProfile={showProfile}
+  closeProfile={closeProfile}
+  user={user}
+  displayRole={displayRole}
 
+  editProfile={editProfile}
+  setEditProfile={setEditProfile}
 
+  showChangePassword={showChangePassword}
+  setShowChangePassword={setShowChangePassword}
 
+  showCurrentPass={showCurrentPass}
+  setShowCurrentPass={setShowCurrentPass}
+  showNewPass={showNewPass}
+  setShowNewPass={setShowNewPass}
+  showConfirmPass={showConfirmPass}
+  setShowConfirmPass={setShowConfirmPass}
 
-  <button
-    className="btn btn-primary"
-    onClick={() => {
-      if (!isFilterIncomplete) sendMessage();
-    }}
-    disabled={isFilterIncomplete}
-  >
-    ➤
-  </button>
-</div>
+  passwordForm={passwordForm}
+  setPasswordForm={setPasswordForm}
+  passwordError={passwordError}
+  handleChangePassword={handleChangePassword}
+  resetChangePasswordState={resetChangePasswordState}
 
-        </div>
-      </div>
-      {showProfile && (
-  <>
-    {/* BACKDROP */}
-    <div
-      className="position-fixed top-0 start-0 w-100 h-100"
-      style={{ background: "rgba(0,0,0,0.4)", zIndex: 9998 }}
-      onClick={closeProfile}
-    />
+  profileForm={profileForm}
+  setProfileForm={setProfileForm}
+  handleSaveProfile={handleSaveProfile}
 
-    {/* MODAL */}
-    <div
-      className="position-fixed top-50 start-50 translate-middle bg-white rounded shadow p-4"
-      style={{ width: "360px", zIndex: 9999 }}
-    >
-      <div className="d-flex justify-content-between align-items-center mb-3">
-  <h5 className="fw-bold mb-0">👤 My Profile</h5>
+  departments={departments}
+  settings={settings}
 
-  {/* EDIT ICON */}
-  {!showChangePassword && (
-  <FaEdit
-    title="Edit Profile"
-    style={{ cursor: "pointer" }}
-    onClick={openEditProfile}
-  />
-)}
-</div>
+  confirmAccountDelete={confirmAccountDelete}
+  setConfirmAccountDelete={setConfirmAccountDelete}
+  handleDeleteAccount={handleDeleteAccount}
 
+  openEditProfile={openEditProfile}
+/>
 
- {/* PROFILE CONTENT */}
-{showChangePassword ? (
-  /* 🔐 CHANGE PASSWORD FORM */
-  <>
-    <h6 className="fw-bold mb-3">🔒 Change Password</h6>
-
-    <label className="form-label small">Current Password</label>
-    <div style={{ position: "relative" }}>
-  <input
-    type={showCurrentPass ? "text" : "password"}
-    className="form-control mb-2"
-    value={passwordForm.currentPassword}
-    onChange={e =>
-      setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
-    }
-  />
-
-  <PasswordEye
-    visible={showCurrentPass}
-    onToggle={() => setShowCurrentPass(v => !v)}
-  />
-</div>
-
-
-    <label className="form-label small">New Password</label>
-
-<div style={{ position: "relative" }}>
-  <input
-    type={showNewPass ? "text" : "password"}
-    className="form-control mb-2"
-    value={passwordForm.newPassword}
-    onChange={e =>
-      setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-    }
-  />
-
-  <PasswordEye
-    visible={showNewPass}
-    onToggle={() => setShowNewPass(v => !v)}
-  />
-</div>
-
-
-
-    <label className="form-label small">Confirm New Password</label>
-    <div style={{ position: "relative" }}>
-  <input
-    type={showConfirmPass ? "text" : "password"}
-    className="form-control mb-3"
-    value={passwordForm.confirmPassword}
-    onChange={e =>
-      setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-    }
-  />
-
-  <PasswordEye
-    visible={showConfirmPass}
-    onToggle={() => setShowConfirmPass(v => !v)}
-  />
-</div>
-
-{passwordError && (
-    <div className="alert alert-danger py-2 mb-3">
-      {passwordError}
-    </div>
-  )}
-
-    <div className="d-flex gap-2">
-      <button
-        className="btn btn-primary w-50"
-        onClick={handleChangePassword}
-      >
-        Update
-      </button>
-
-      <button
-        className="btn btn-secondary w-50"
-        onClick={resetChangePasswordState}
-      >
-        Cancel
-      </button>
-    </div>
-  </>
-) :editProfile ? (
-  <>
-    {/* NAME */}
-    <label className="form-label small">Name</label>
-    <input
-      className="form-control mb-2"
-      value={profileForm.username}
-      onChange={e =>
-        setProfileForm({ ...profileForm, username: e.target.value })
-      }
-    />
-
-    {/* EMAIL */}
-    <label className="form-label small">Email</label>
-    <input
-      className="form-control mb-2"
-      value={profileForm.email}
-      onChange={e =>
-        setProfileForm({ ...profileForm, email: e.target.value })
-      }
-    />
-
-    {/* DEPARTMENT */}
-    <label className="form-label small">Department</label>
-<select
-  className="form-select mb-2"
-  value={String(profileForm.department_id || "")}
-  onChange={e =>
-    setProfileForm({
-      ...profileForm,
-      department_id: e.target.value
-    })
-  }
->
-  <option value="">Select</option>
-
-  {departments.map(d => (
-    <option key={d.id} value={d.id}>
-      {d.name}
-    </option>
-  ))}
-</select>
-
-
-    {/* YEAR */}
-    <label className="form-label small">Year</label>
-<select
-  className="form-select mb-2"
-  value={profileForm.year || ""}
-  onChange={e =>
-    setProfileForm(prev => ({
-      ...prev,
-      year: e.target.value
-    }))
-  }
->
-
-  <option value="">Select</option>
-  {Array.from({ length: settings?.total_years || 0 }, (_, i) => (
-    <option key={i + 1} value={String(i + 1)}>
-      {i + 1}
-    </option>
-  ))}
-</select>
-
-
-    {/* SEMESTER */}
-    <label className="form-label small">Semester</label>
-<select
-  className="form-select mb-3"
-  value={profileForm.semester || ""}
-  onChange={e =>
-    setProfileForm(prev => ({
-      ...prev,
-      semester: e.target.value
-    }))
-  }
->
-
-  <option value="">Select</option>
-  {Array.from({ length: settings?.total_semesters || 0 }, (_, i) => (
-    <option key={i + 1} value={String(i + 1)}>
-      {i + 1}
-    </option>
-  ))}
-</select>
-
-
-    {/* ACTIONS */}
-    <div className="d-flex gap-2">
-      <button
-        className="btn btn-primary w-50"
-        onClick={handleSaveProfile}
-      >
-        Save
-      </button>
-
-      <button
-        className="btn btn-secondary w-50"
-        onClick={() => setEditProfile(false)}
-      >
-        Cancel
-      </button>
-    </div>
-  </>
-) : (
-<>
-  {/* READ-ONLY VIEW */}
-  <div className="small text-muted mb-2">
-    <strong>Name:</strong> {user?.username}
-  </div>
-
-  <div className="small text-muted mb-2">
-    <strong>Email:</strong> {user?.email}
-  </div>
-
-  <div className="small text-muted mb-2">
-    <strong>Department:</strong> {user?.department || "—"}
-  </div>
-
-  <div className="small text-muted mb-2">
-    <strong>Year:</strong> {user?.year || "—"}
-  </div>
-
-  <div className="small text-muted mb-2">
-    <strong>Semester:</strong> {user?.semester || "—"}
-  </div>
-
-  <div className="small text-muted mb-3">
-    <strong>Role:</strong> {displayRole}
-  </div>
-
-{/* ACTION BUTTONS */}
-<div className="d-flex gap-3 mt-3 align-items-center">
-
-  {/* UPDATE BUTTON — HIDDEN WHEN DELETE CONFIRMATION ACTIVE */}
-{!confirmAccountDelete && (
-  <button
-    className="btn btn-sm btn-outline-secondary w-50"
-    onClick={() => {
-      setShowChangePassword(true);
-      setEditProfile(false);
-    }}
-  >
-    🔒 Change Password
-  </button>
-)}
-
-
-
-  {/* DELETE / CONFIRM AREA */}
-  {!confirmAccountDelete ? (
-    <button
-      className="btn btn-outline-danger w-50"
-      onClick={() => setConfirmAccountDelete(true)}
-    >
-      🗑 Delete
-    </button>
-  ) : (
-    <div className="d-flex align-items-center gap-3 text-danger">
-      <span className="small">Are you sure? Your Account will be permanently deleted</span>
-
-      {/* ✔ CONFIRM */}
-      <FaCheck
-        title="Confirm delete"
-        size={18}
-        style={{
-          cursor: deletingAccount ? "not-allowed" : "pointer",
-          opacity: deletingAccount ? 0.6 : 1
-        }}
-        onClick={async () => {
-          if (deletingAccount) return;
-
-          setDeletingAccount(true);
-
-          try {
-            const res = await fetch(
-              "http://localhost:5000/user/delete-account",
-              {
-                method: "DELETE",
-                headers: {
-                  Authorization: localStorage.getItem("token"),
-                },
-              }
-            );
-
-            if (!res.ok) {
-              setDeletingAccount(false);
-              return;
-            }
-
-            localStorage.clear();
-            window.location.href = "/";
-          } catch (err) {
-            console.error(err);
-            setDeletingAccount(false);
-          }
-        }}
-      />
-
-      {/* ❌ CANCEL */}
-      <FaTimes
-        title="Cancel"
-        size={18}
-        style={{ cursor: "pointer", color: "#6c757d" }}
-        onClick={() => {
-          setConfirmAccountDelete(false);
-          setDeletingAccount(false);
-        }}
-      />
-    </div>
-  )}
-</div>
-
-        <button
-        className="btn btn-sm btn-secondary w-100 mt-3"
-        onClick={closeProfile}
-      >
-        Close
-      </button>
-</>
-
-)}
-
-
-    </div>
-  </>
-)}
 {showToast && (
   <div
     style={{

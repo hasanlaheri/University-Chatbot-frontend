@@ -12,7 +12,11 @@ import {
   FaTimes ,
   FaCheck,
   FaFilter,
-  FaSyncAlt  
+  FaSyncAlt,
+  FaLock ,
+  FaArrowLeft,
+  FaFolderOpen,
+  FaEyeSlash 
 } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useLocation } from "react-router-dom";
@@ -371,275 +375,213 @@ async function handleDelete(id) {
 
 
   return (
-    <div
-      className="min-vh-100 bg-light d-flex flex-column align-items-center py-4 px-2"
-      style={{ fontFamily: "Poppins, sans-serif" }}
-    >
-      <ToastContainer position="top-right" autoClose={3000} />
-      {/* TOP BAR */}
-      <div className="d-flex justify-content-between align-items-center w-100 px-3 mb-4 position-relative">
+  <div
+    className="min-vh-100 d-flex flex-column align-items-center py-4 px-2"
+    style={{ fontFamily: "'Poppins', sans-serif", backgroundColor: "#f8fafc" }} // Matches Chat Snow Background
+  >
+    <ToastContainer position="top-right" autoClose={3000} />
+
+    {/* TOP BAR */}
+    <div className="max-width-container w-100 px-4 mb-4 d-flex justify-content-between align-items-center" style={{ maxWidth: "1200px" }}>
+      <div className="d-flex align-items-center gap-3">
         <div className="dropdown">
           <button
-            className="btn btn-link text-decoration-none p-0"
+            className="btn btn-link p-0 border-0 transition-all hover-scale"
             type="button"
             id="profileDropdown"
             data-bs-toggle="dropdown"
-            aria-expanded="false"
           >
-            <FaUserCircle size={40} className="text-primary" />
+            <FaUserCircle size={42} className="text-primary shadow-sm rounded-circle" />
           </button>
-          <ul className="dropdown-menu dropdown-menu-end shadow-sm">
+          <ul className="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2">
+            <li className="px-3 py-2 border-bottom">
+                <small className="text-muted d-block">Signed in as</small>
+                <span className="fw-bold text-dark">{user.email}</span>
+            </li>
             <li>
-              <button
-                className="dropdown-item d-flex align-items-center"
-                onClick={() => navigate(`/${user.college_code.toLowerCase()}/${user.role}/profile`)}
-              >
+              <button className="dropdown-item py-2 d-flex align-items-center mt-1" onClick={() => navigate(`/${user.college_code.toLowerCase()}/${user.role}/profile`)}>
                 <FaUser className="me-2 text-primary" /> Profile
               </button>
             </li>
             <li>
-  <button
-    className="dropdown-item d-flex align-items-center"
-    onClick={() => {
-      setShowChangePassword(true);
-      setPasswordError("");
-    }}
-  >
-    🔒 Change Password
-  </button>
-</li>
-
+              <button className="dropdown-item py-2 d-flex align-items-center" onClick={() => { setShowChangePassword(true); setPasswordError(""); }}>
+                <FaLock className="me-2 text-primary" /> Change Password
+              </button>
+            </li>
+            <li><hr className="dropdown-divider" /></li>
             <li>
-              <button
-                className="dropdown-item d-flex align-items-center text-danger"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-              >
-                <FaSignOutAlt className="me-2" />{" "}
-                {isLoggingOut ? "Logging out..." : "Logout"}
+              <button className="dropdown-item py-2 d-flex align-items-center text-danger" onClick={handleLogout} disabled={isLoggingOut}>
+                <FaSignOutAlt className="me-2" /> {isLoggingOut ? "Logging out..." : "Logout"}
               </button>
             </li>
           </ul>
         </div>
-
-        <h4 className="fw-bold text-primary mb-0">Faculty Dashboard</h4>
+        <div>
+            <h4 className="fw-bold text-slate-900 mb-0">Faculty Dashboard</h4>
+            <span className="badge bg-blue-soft text-primary fw-normal">Academic Management</span>
+        </div>
       </div>
+    </div>
 
-      {/* CARDS */}
-      <div className="d-flex flex-wrap justify-content-center gap-3 w-100 px-3">
-  
+    {/* STATS SECTION */}
+    <div className="max-width-container w-100 px-4" style={{ maxWidth: "1200px" }}>
+      <div className="row g-3 justify-content-start">
+        {/* Create New Card - Special Action Color */}
+        <div className="col-12 col-md-6 col-lg-3">
+          <div 
+            className="card h-100 shadow-sm border-0 action-card" 
+            onClick={() => navigate(`/${user.college_code.toLowerCase()}/${user.role}/upload-new`)}
+          >
+            <div className="card-body d-flex flex-column align-items-center text-center justify-content-center p-4">
+              <div className="icon-box-primary mb-3">
+                <FaPlusCircle size={28} />
+              </div>
+              <h6 className="fw-bold text-white mb-1">Create New Upload</h6>
+              <p className="text-white-50 x-small mb-0">Study material or notice</p>
+            </div>
+          </div>
+        </div>
 
+        {/* Total Uploads */}
+        <div className="col-12 col-md-6 col-lg-3">
+          <div className="card h-100 shadow-sm border-0 stat-card">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <FaChartBar size={24} className="text-primary" />
+                <span className="text-muted small fw-medium">All Time</span>
+              </div>
+              <h3 className="fw-bold text-slate-900 mb-0">{stats.total}</h3>
+              <p className="text-muted small mb-0">Total Documents</p>
+            </div>
+          </div>
+        </div>
 
-        {/* create new */}
-        <div
-          className="card shadow-sm text-center border-0"
-          style={{
-            width: "280px",
-            borderRadius: "12px",
-            background: "linear-gradient(135deg, #007bff, #0056b3)",
-            color: "white",
-          }}
-        >
-          <div className="card-body">
-            <FaPlusCircle size={35} className="mb-2" />
-            <h5 className="fw-semibold">Create New Upload</h5>
-            <p className="small text-white-50">
-              Add new study material or notice
-            </p>
+        {/* Dynamic Categories */}
+        {Object.entries(stats.categories || {}).map(([cat, count]) => (
+          <div key={cat} className="col-12 col-md-6 col-lg-3">
+            <div className="card h-100 shadow-sm border-0 stat-card">
+              <div className="card-body p-4">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <FaFileAlt size={24} className="text-slate-400" />
+                  <span className="badge bg-light text-dark fw-normal border">{cat}</span>
+                </div>
+                <h3 className="fw-bold text-slate-900 mb-0">{count}</h3>
+                <p className="text-muted small mb-0">Files Uploaded</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* MAIN CONTENT AREA */}
+    <div className="max-width-container w-100 px-4 mt-5" style={{ maxWidth: "1200px" }}>
+      <div className="bg-white rounded-4 shadow-sm border overflow-hidden">
+        
+        {/* List Header/Toolbar */}
+        <div className="p-4 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div>
+            <h5 className="fw-bold text-slate-900 mb-1">Your Uploaded Materials</h5>
+            <p className="text-muted small mb-0">Manage and monitor student access to your files.</p>
+          </div>
+
+          <div className="d-flex align-items-center gap-2">
+            <div className="input-group input-group-sm rounded-pill border px-2 bg-light">
+              <span className="input-group-text bg-transparent border-0"><FaFilter className="text-muted" size={12} /></span>
+              <input
+                type="text"
+                className="form-control bg-transparent border-0 shadow-none py-2"
+                style={{ width: "200px" }}
+                placeholder="Search by filename..."
+                value={draftSearch}
+                onChange={e => setDraftSearch(e.target.value)}
+              />
+            </div>
             <button
-              className="btn btn-light btn-sm fw-semibold mt-2"
-              onClick={() => navigate(`/${user.college_code.toLowerCase()}/${user.role}/upload-new`)}
+              className={`btn btn-sm rounded-circle d-flex align-items-center justify-content-center position-relative ${appliedFilters ? 'btn-primary' : 'btn-outline-secondary'}`}
+              style={{ width: "38px", height: "38px" }}
+              onClick={() => setShowFilter(true)}
             >
-              Upload Now
+              <FaFilter size={14} />
+              {appliedFilters && <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>}
             </button>
           </div>
         </div>
 
-        {/* total */}
-        <div
-          className="card shadow-sm text-center border-0"
-          style={{ width: "280px", borderRadius: "12px", background: "white" }}
-        >
-          <div className="card-body">
-            <FaChartBar size={35} className="text-primary mb-2" />
-            <h5 className="fw-semibold text-dark">Total Uploads</h5>
-            <p className="small text-muted mb-0">
-             <div className="display-6 fw-bold text-dark">
-  {stats.total}
-</div>
+        {/* Data List */}
+        <div className="p-0">
+          {!appliedFilters ? (
+            <div className="text-center py-5">
+              <div className="mb-3 opacity-25"><FaFolderOpen size={60} /></div>
+              <h6 className="text-dark fw-bold">Ready to view your data?</h6>
+              <p className="text-muted small px-4">Please apply filters to load your uploaded materials.</p>
+            </div>
+          ) : uploads.length === 0 ? (
+            <div className="text-center py-5">
+               <p className="text-muted small mb-0">No files found matching your criteria.</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <div className="list-group list-group-flush">
+                {uploads.map(item => (
+                  <div key={item.id} className="list-group-item list-group-item-action py-3 px-4 d-flex align-items-center justify-content-between border-start-0 border-end-0">
+                    <div className="d-flex align-items-center gap-3">
+                      <div className="file-icon-wrapper">
+                        <FaFileAlt className="text-primary" size={20} />
+                      </div>
+                      <div>
+                        <h6 className="mb-0 fw-bold text-slate-900">{item.filename}</h6>
+                        <div className="d-flex align-items-center gap-2 text-muted x-small">
+                          <span className="fw-medium text-primary">{item.category}</span>
+                          <span>•</span>
+                          <span>{item.uploaded_at}</span>
+                        </div>
+                      </div>
+                    </div>
 
+                    <div className="d-flex align-items-center gap-4">
+                      {/* Visibility Control */}
+                      <div className="visibility-toggle">
+                        {updatingVisibilityIds.has(item.id) ? (
+                          <div className="spinner-border spinner-border-sm text-primary" role="status" />
+                        ) : (
+                          <div 
+                            className={`badge rounded-pill cursor-pointer d-flex align-items-center gap-2 py-2 px-3 transition-all ${item.visibility === "public" ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger'}`}
+                            onClick={() => toggleVisibility(item)}
+                          >
+                             {item.visibility === "public" ? <FaEye size={12} /> : <FaEyeSlash size={12} />}
+                             <span style={{ fontSize: '11px', textTransform: 'capitalize' }}>{item.visibility}</span>
+                             <FaSyncAlt size={10} className="opacity-50" />
+                          </div>
+                        )}
+                      </div>
 
-            </p>
-          </div>
+                      {/* Action Icons */}
+                      <div className="d-flex align-items-center gap-3">
+                        <button className="btn-icon text-primary" onClick={() => viewFile(item.id)} title="View File">
+                          <FaEye size={18} />
+                        </button>
+                        
+                        {confirmDeleteId === item.id ? (
+                           <div className="d-flex align-items-center gap-2 animate-fade-in">
+                             <FaCheck className="text-success cursor-pointer" onClick={() => handleDelete(item.id)} />
+                             <FaTimes className="text-secondary cursor-pointer" onClick={() => setConfirmDeleteId(null)} />
+                           </div>
+                        ) : (
+                          <button className="btn-icon text-danger" onClick={() => setConfirmDeleteId(item.id)} title="Delete">
+                            <FaTrashAlt size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      {Object.entries(stats.categories || {}).map(([cat, count]) => (
-  <div
-    key={cat}
-    className="card shadow-sm text-center border-0"
-    style={{ width: "280px", borderRadius: "12px", background: "white" }}
-  >
-    <div className="card-body">
-      <FaFileAlt size={35} className="text-primary mb-2" />
-      <h5 className="fw-semibold text-dark">{cat}</h5>
-      <p className="small text-muted mb-0">
-       <div className="display-6 fw-bold text-dark">
-  {count}
-</div>
-
-      </p>
+      </div>
     </div>
-  </div>
-))}
-    
-      </div>
-
-      {/* list */}
-      <div className="w-100 px-3 mt-4">
-     <div className="d-flex justify-content-between align-items-center w-100 px-3 mt-4 mb-2">
-  <h5 className="fw-bold text-dark mb-0">Your Uploads</h5>
-
-  <div className="d-flex align-items-center gap-2">
-   <input
-  type="text"
-  className="form-control form-control-sm"
-  style={{ width: "180px" }}
-  placeholder="Search file..."
-  value={draftSearch}
-  onChange={e => setDraftSearch(e.target.value)}
-/>
-
-
-   <button
-  className="btn btn-outline-secondary btn-sm position-relative d-flex align-items-center justify-content-center"
-  title="Filter uploads"
-  onClick={() => setShowFilter(true)}
-  style={{ width: "36px", height: "36px" }}
->
-  <FaFilter />
-
-  {appliedFilters && (
-    <span
-      className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary"
-      style={{ fontSize: "10px" }}
-    >
-      •
-    </span>
-  )}
-</button>
-
-  </div>
-</div>
-
-
-
-
-{!appliedFilters ? (
-  <div className="text-center text-muted py-5">
-    <FaFileAlt size={40} className="mb-2" />
-    <p className="mb-1 fw-semibold">No data to display</p>
-    <small>Apply filters to view uploaded materials</small>
-  </div>
-) : uploads.length === 0 ? (
-  <p className="text-muted text-center">No uploads found.</p>
-) : (
-  <div className="list-group shadow-sm">
-    {uploads.map(item => (
-      <div
-        key={item.id}
-        className="list-group-item d-flex justify-content-between align-items-center"
-      >
-        <div className="d-flex align-items-center gap-2">
-          <FaFileAlt className="text-primary" />
-          <div>
-            <h6 className="mb-0 fw-semibold">{item.filename}</h6>
-            <small className="text-muted">
-              {item.category} • Uploaded on {item.uploaded_at}
-            </small>
-          </div>
-        </div>
-
-<div className="d-flex align-items-center gap-3">
-  {/* VISIBILITY TOGGLE */}
-
-<div className="d-flex align-items-center gap-2">
-  {updatingVisibilityIds.has(item.id) ? (
-    <div
-      className="spinner-border spinner-border-sm text-primary"
-      role="status"
-    />
-  ) : (
-    <span
-      className={`small fw-semibold d-flex align-items-center gap-1 ${
-        item.visibility === "public" ? "text-success" : "text-danger"
-      }`}
-      style={{ cursor: "pointer" }}
-      title="Toggle visibility"
-      onClick={() => toggleVisibility(item)}
-    >
-      {item.visibility === "public" ? "Public" : "Private"}
-      <FaSyncAlt size={14} />
-    </span>
-  )}
-</div>
-
-
-
-  {/* VIEW */}
-  <FaEye
-    size={18}
-    className="text-primary"
-    style={{ cursor: "pointer" }}
-    title="View file"
-    onClick={() => viewFile(item.id)}
-  />
-
-{/* DELETE FLOW */}
-{deletingIds.has(item.id) ? (
-  <div
-    className="spinner-border spinner-border-sm text-danger"
-    role="status"
-  />
-) : confirmDeleteId === item.id ? (
-  <div className="d-flex align-items-center gap-2">
-    <span className="text-danger small fw-semibold">
-      Are you sure?
-    </span>
-
-    <FaCheck
-      size={16}
-      className="text-success"
-      style={{ cursor: "pointer" }}
-      title="Confirm delete"
-      onClick={() => handleDelete(item.id)}
-    />
-
-    <FaTimes
-      size={16}
-      className="text-secondary"
-      style={{ cursor: "pointer" }}
-      title="Cancel"
-      onClick={() => setConfirmDeleteId(null)}
-    />
-  </div>
-) : (
-  <FaTrashAlt
-    size={18}
-    className="text-danger"
-    style={{ cursor: "pointer" }}
-    title="Delete file"
-    onClick={() => setConfirmDeleteId(item.id)}
-  />
-)}
-
-</div>
-
-
-      </div>
-    ))}
-  </div>
-)}
-
-      </div>
 {showFilter && (
   <>
     {/* backdrop */}
