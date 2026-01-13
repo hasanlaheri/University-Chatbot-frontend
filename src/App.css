@@ -396,70 +396,8 @@ body {
 
 
 
-/* Palette matching Chat UI */
-:root {
-    --primary-blue: #3b82f6;
-    --slate-900: #0f172a;
-    --slate-400: #94a3b8;
-    --bg-snow: #f8fafc;
-}
 
-.x-small { font-size: 11px; }
 
-/* Stat Cards */
-.stat-card {
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid #e2e8f0 !important;
-}
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-}
 
-/* Special Action Card */
-.action-card {
-    background: linear-gradient(135deg, var(--primary-blue), #1e40af);
-    cursor: pointer;
-    transition: 0.2s;
-}
-.action-card:hover {
-    filter: brightness(1.1);
-    transform: scale(1.02);
-}
 
-.icon-box-primary {
-    background: rgba(255, 255, 255, 0.2);
-    width: 54px; height: 54px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center; justify-content: center;
-    color: white;
-}
 
-/* Visibility Badges */
-.bg-success-soft { background: rgba(34, 197, 94, 0.1); }
-.bg-danger-soft { background: rgba(239, 68, 68, 0.1); }
-
-/* File Icon Wrapper */
-.file-icon-wrapper {
-    width: 40px; height: 40px;
-    background: #f1f5f9;
-    border-radius: 10px;
-    display: flex;
-    align-items: center; justify-content: center;
-}
-
-/* Action Buttons */
-.btn-icon {
-    background: none; border: none;
-    padding: 5px; color: var(--slate-400);
-    transition: 0.2s;
-}
-.btn-icon:hover { color: var(--primary-blue); transform: scale(1.1); }
-
-/* Filters Drawer Styling */
-.filter-drawer-modern {
-    width: 340px;
-    border-top-left-radius: 24px;
-    border-bottom-left-radius: 24px;
-}

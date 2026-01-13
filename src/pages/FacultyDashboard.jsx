@@ -23,7 +23,7 @@ import { useLocation } from "react-router-dom";
 import { ToastContainer,toast } from "react-toastify";
 import { useSearchParams } from "react-router-dom";
 import PasswordEye from "../components/PasswordEye";
-
+import "../styles/faculty.css";
 
 function FacultyDashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -563,15 +563,29 @@ async function handleDelete(id) {
                         </button>
                         
                         {confirmDeleteId === item.id ? (
-                           <div className="d-flex align-items-center gap-2 animate-fade-in">
-                             <FaCheck className="text-success cursor-pointer" onClick={() => handleDelete(item.id)} />
-                             <FaTimes className="text-secondary cursor-pointer" onClick={() => setConfirmDeleteId(null)} />
-                           </div>
-                        ) : (
-                          <button className="btn-icon text-danger" onClick={() => setConfirmDeleteId(item.id)} title="Delete">
-                            <FaTrashAlt size={16} />
-                          </button>
-                        )}
+  deletingIds.has(item.id) ? (
+    <div className="spinner-border spinner-border-sm text-danger" />
+  ) : (
+    <div className="d-flex align-items-center gap-2 animate-fade-in">
+      <FaCheck
+        className="text-success cursor-pointer"
+        onClick={() => handleDelete(item.id)}
+      />
+      <FaTimes
+        className="text-secondary cursor-pointer"
+        onClick={() => setConfirmDeleteId(null)}
+      />
+    </div>
+  )
+) : (
+  <button
+    className="btn-icon text-danger"
+    onClick={() => setConfirmDeleteId(item.id)}
+  >
+    <FaTrashAlt size={16} />
+  </button>
+)}
+
                       </div>
                     </div>
                   </div>
