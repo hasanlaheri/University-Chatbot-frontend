@@ -120,127 +120,137 @@ const roleDisplay = {
 }[role] || "User";
 
 
-  return (
+ return (
+  <div
+    className="min-vh-100 d-flex flex-column align-items-center justify-content-center px-3"
+    style={{
+      backgroundColor: "#f8fafc", // Very light slate background
+      fontFamily: "'Inter', system-ui, sans-serif",
+    }}
+  >
+    {/* Global Navigation Bar */}
+    <div className="position-absolute top-0 w-100 d-flex justify-content-between align-items-center p-4 px-md-5">
+      <div className="d-flex align-items-center gap-2">
+        <div className="bg-primary rounded-3 p-2 d-flex align-items-center justify-content-center shadow-sm" style={{ width: '38px', height: '38px' }}>
+          <span className="text-white fw-bold">U</span>
+        </div>
+        <h5 className="fw-bold mb-0 text-slate-900 tracking-tight d-none d-sm-block">University Portal</h5>
+      </div>
+      <div className="d-flex gap-3 align-items-center">
+        <button
+          className="btn btn-link text-slate-500 text-decoration-none fw-semibold small p-0 me-3 transition-all hover-dark"
+          onClick={() => navigate("/")}
+        >
+          ← Back
+        </button>
+        {role !== "admin" && (
+          <button
+            className="btn btn-outline-primary btn-sm fw-bold px-4 rounded-pill border-2"
+            onClick={() => navigate(`/register/${role}`)}
+          >
+            Create Account
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* Login Card Container */}
     <div
-      className="min-vh-100 d-flex flex-column justify-content-center align-items-center"
+      className="card border-0 shadow-sm position-relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #004e92, #000428)",
-        color: "white",
+        width: "100%",
+        maxWidth: "420px",
+        borderRadius: "24px",
+        background: "#ffffff",
+        border: "1px solid #e2e8f0 !important"
       }}
     >
-      {/* Header */}
-      <div className="position-absolute top-0 w-100 d-flex justify-content-between align-items-center p-3 px-4">
-        <h4 className="fw-bold">🏛️ University Portal</h4>
-        <div>
-          <button
-            className="btn btn-outline-light me-2"
-            onClick={() => navigate("/")}
-          >
-            ← Back
-          </button>
-          {role !== "admin" && (
-            <button
-              className="btn btn-warning fw-semibold"
-              onClick={() => navigate(`/register/${role}`)}
-            >
-              Register
-            </button>
-          )}
+      {/* Subtle Brand Accent Line */}
+      <div className="position-absolute top-0 start-0 w-100" style={{ height: '4px', background: '#0d6efd' }}></div>
+
+      {/* Success Overlay */}
+      {success && (
+        <div
+          className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white"
+          style={{ zIndex: 10 }}
+        >
+          <div className="spinner-border text-primary mb-3" style={{ width: "3rem", height: "3rem" }} role="status"></div>
+          <h4 className="fw-bold text-slate-900">Authenticated</h4>
+          <p className="text-slate-500 small">Redirecting to your workspace...</p>
         </div>
-      </div>
+      )}
 
-      {/* Login Card */}
-      <div
-        className="card shadow-lg border-0 text-dark p-4 position-relative"
-        style={{
-          width: "400px",
-          borderRadius: "15px",
-          background: "white",
-        }}
-      >
-        {/* Spinner Animation */}
-        {success && (
-          <div
-            className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white bg-opacity-75 rounded"
-            style={{ zIndex: 10 }}
-          >
-            <div
-              className="spinner-border text-success mb-3"
-              style={{ width: "3rem", height: "3rem" }}
-              role="status"
-            ></div>
-            <h5 className="fw-bold text-success">Login Successful!</h5>
-          </div>
-        )}
-
-        <div className="text-center mb-4">
-          <h3 className="fw-bold text-primary">{roleDisplay} Login</h3>
-          <p className="text-muted">
-            Access your {roleDisplay.toLowerCase()} dashboard
+      <div className="card-body p-4 p-md-5">
+        <div className="mb-5 text-center">
+          <h2 className="fw-bold text-slate-900 mb-2 tracking-tighter">Sign In</h2>
+          <p className="text-slate-500 small fw-medium">
+            Welcome back to the <span className="text-primary fw-bold">{roleDisplay}</span> gateway.
           </p>
         </div>
 
-        {error && <div className="alert alert-danger text-center">{error}</div>}
+        {error && (
+          <div className="alert-light-error mb-4">
+            <span className="small">⚠️ {error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleLogin}>
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Email</label>
+          <div className="mb-4">
+            <label className="label-light">Email Address</label>
             <input
               type="email"
-              className="form-control"
-              placeholder="Enter email"
+              className="form-control input-light"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
 
-          <div className="mb-3">
-  <label className="form-label fw-semibold">Password</label>
-
-  <div style={{ position: "relative" }}>
-    <input
-      type={showPassword ? "text" : "password"}
-      className="form-control"
-      placeholder="Enter password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      required
-    />
-
-    <PasswordEye
-      visible={showPassword}
-      onToggle={() => setShowPassword(v => !v)}
-    />
-  </div>
-</div>
-
+          <div className="mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <label className="label-light mb-0">Password</label>
+              <a href="#" className="text-decoration-none x-small fw-bold text-primary">Forgot?</a>
+            </div>
+            <div className="position-relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control input-light pe-5"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <div className="position-absolute end-0 top-50 translate-middle-y pe-3 opacity-50">
+                <PasswordEye
+                  visible={showPassword}
+                  onToggle={() => setShowPassword(v => !v)}
+                />
+              </div>
+            </div>
+          </div>
 
           <button
-            type="submit"
-            className="btn btn-primary w-100 fw-semibold mt-2"
-            disabled={success}
-          >
-            {success ? "Logging in..." : "Login"}
-          </button>
+  type="submit"
+  className="btn btn-primary w-100 py-2 fw-semibold rounded-2 mt-3 transition-all"
+  style={{
+    boxShadow: "0 3px 5px rgba(13, 110, 253, 0.18)",
+    fontSize: "0.95rem"
+  }}
+  disabled={success}
+>
+  {success ? "Verifying..." : "Continue"}
+</button>
+
         </form>
-
-        <div className="text-center mt-3">
-          <small className="text-muted">
-            Forgot password?{" "}
-            <a href="#" className="text-decoration-none">
-              Reset here
-            </a>
-          </small>
-        </div>
       </div>
-
-      {/* Footer */}
-      <footer className="mt-5 text-white-50 small">
-        © 2025 University Chatbot Portal. All Rights Reserved.
-      </footer>
     </div>
-  );
-}
+
+    {/* Professional Footer */}
+    <footer className="mt-5 text-center text-slate-400 x-small px-4">
+      <p className="mb-0">
+        © 2026 University Portal. All rights reserved.
+      </p>
+    </footer>
+  </div>
+);}
 
 export default LoginPage;

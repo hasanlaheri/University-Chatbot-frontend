@@ -1,47 +1,34 @@
-.landing-container {
-  height: 100vh;
-  background: linear-gradient(to right, #e3f2fd, #f1f8e9);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+/* Smooth button transitions */
+.transition-all {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
+.transition-all:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.1);
 }
 
-.navbar-brand {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #004085;
+/* Custom Dropdown Toggle */
+.btn-login-modern:after {
+  display: none; /* Removes the caret arrow */
 }
 
-.login-btn {
-  color: #004085 !important;
-  font-weight: 600;
-  text-decoration: none;
-  border: none;
+.btn-login-modern:hover {
+  background-color: #f8fafc !important;
+  border-color: #4F46E5 !important;
+  color: #4F46E5;
 }
 
-.login-btn:hover {
-  color: #007bff !important;
-  text-decoration: none;
+/* Typography fine-tuning */
+h1 {
+  line-height: 1.1;
 }
 
-.main-content {
-  text-align: center;
-  margin-top: -10%;
+.dropdown-item:active {
+  background-color: #4F46E5 !important;
 }
 
-.main-content h1 {
-  font-size: 3rem;
-  color: #004085;
-}
-
-.main-content p {
-  font-size: 1.2rem;
-  color: #333;
+.dropdown-item {
+  transition: background 0.2s;
+  font-weight: 500;
 }

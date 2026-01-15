@@ -125,6 +125,7 @@ const [showPassword, setShowPassword] = useState(false);
   const validationErrors = validateForm();
   if (Object.keys(validationErrors).length > 0) {
     setErrors(validationErrors);
+    setTimeout(() => setErrors("") , 3000);
     return;
   }
 
@@ -165,7 +166,17 @@ const [showPassword, setShowPassword] = useState(false);
         return;
       }
 
-      setErrors({ general: data.error || "Registration failed" });
+      // 🔥 Email already exists
+if (data.error?.toLowerCase().includes("email")) {
+  setErrors(prev => ({
+    ...prev,
+    email: "This email is already registered"
+  }));
+  return;
+}
+
+setErrors({ general: data.error || "Registration failed" });
+
     }
 
   } catch (error) {
@@ -219,315 +230,330 @@ useEffect(() => {
 
 
 
-  return (
-    <div
-      className="min-vh-100 d-flex flex-column align-items-center"
-      style={{
-        background: "linear-gradient(135deg, #16222A, #3A6073)",
-        color: "white",
-        paddingTop: "100px",
-      }}
-    >
-      <div className="position-absolute top-0 w-100 d-flex justify-content-between align-items-center p-3 px-4">
-        <h4 className="fw-bold">🏛️ University Portal</h4>
-        <button className="btn btn-outline-light" onClick={() => navigate("/")}>
-          ← Back to Home
-        </button>
-      </div>
-
-      <div
-  className={`card shadow-lg border-0 text-dark p-4 mt-4 position-relative 
-    ${unauthorized ? "shake-error" : ""}`}
-
-        
-        style={{
-          width: "95%",
-          maxWidth: "420px",
-          borderRadius: "12px",
-          background: "white",
+return (
+  <div
+    className="min-vh-100 d-flex bg-white position-relative" // added position-relative
+    style={{ fontFamily: "'Inter', sans-serif" }}
+  >
+    {/* --- NEW: LOADING SPIRAL OVERLAY --- */}
+    {success && (
+      <div 
+        className="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+        style={{ 
+          zIndex: 9999, 
+          background: "rgba(255, 255, 255, 0.8)", 
+          backdropFilter: "blur(4px)" 
         }}
       >
-        {success && (
-          <div
-            className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white bg-opacity-75 rounded"
-            style={{ zIndex: 10 }}
-          >
-            <div
-              className="spinner-border text-success mb-3"
-              style={{ width: "3rem", height: "3rem" }}
-              role="status"
-            ></div>
-            <h5 className="fw-bold text-success">Registration Successful!</h5>
+        <div 
+          className="spinner-border text-primary" 
+          style={{ width: "4rem", height: "4rem", borderWidth: "0.25em" }} 
+          role="status"
+        >
+        </div>
+        <h4 className="mt-4 fw-bold text-dark">Creating your profile...</h4>
+        <p className="text-muted">Setting up your academic workspace</p>
+      </div>
+    )}
+
+    {/* --- NEW: UNAUTHORIZED FACULTY OVERLAY --- */}
+    {unauthorized && (
+      <div 
+        className="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+        style={{ 
+          zIndex: 10000, 
+          background: "rgba(255, 255, 255, 0.95)" 
+        }}
+      >
+        <div className="text-center p-5 shadow-lg rounded-4 border border-danger bg-white" style={{ maxWidth: "400px" }}>
+          <div className="display-1 text-danger mb-4">❌</div>
+          <h3 className="fw-bold">Registration Failed</h3>
+          <p className="text-muted">
+            This email is not authorized for faculty registration. Please contact your administrator for approval.
+          </p>
+          <div className="spinner-grow spinner-grow-sm text-secondary me-2"></div>
+          <small className="text-secondary">Redirecting to home...</small>
+        </div>
+      </div>
+    )}
+    {/* LEFT SIDE (DESKTOP ONLY) */}
+    <div
+      className="col-lg-5 d-none d-lg-flex align-items-center justify-content-center position-relative"
+      style={{
+        backgroundColor: "#F9FAFB",
+        borderRight: "1px solid #F3F4F6",
+      }}
+    >
+      <div className="p-5">
+        <span className="h4 fw-bold">🏛️ UniPortal</span>
+        <h1 className="display-5 fw-bold text-dark mt-4">
+          Start your academic journey.
+        </h1>
+        <p className="text-secondary fs-5 mt-3">
+          Access your course materials, connect with faculty, and manage your
+          campus life in one place.
+        </p>
+      </div>
+    </div>
+
+    {/* RIGHT SIDE */}
+    <div className="col-12 col-lg-7 d-flex flex-column align-items-center justify-content-center p-4">
+      <div className="w-100" style={{ maxWidth: "480px" }}>
+        {/* BACK */}
+        <button
+          className="btn btn-link text-decoration-none p-0 text-secondary mb-3"
+          onClick={() => navigate("/")}
+        >
+          ← Back to home
+        </button>
+
+        <h2 className="fw-bold mb-2">Create your profile</h2>
+        <p className="text-muted mb-4">
+          Fill in your details to customize your experience.
+        </p>
+
+        {/* 🔔 ROLE NOTE */}
+        {role === "user" && (
+          <div className="alert alert-info small mb-4">
+            ℹ️ If your email matches the selected college domain, you will be
+            registered as a <b>Student</b>. Otherwise, you will be registered as
+            a <b>Guest</b>.
           </div>
         )}
-        {unauthorized && (
-  <div className="unauthorized-popup">
-    ❌ Unauthorized Email — Only approved faculty can register!
-    <br />
-    Redirecting…
-  </div>
-)}
 
-
-        <div className="text-center mb-4">
-          <h3 className="fw-bold text-primary text-capitalize">
-            {role} Registration
-          </h3>
-          <p className="text-muted mb-0">
-            Create your {role} account to access the portal
-          </p>
-        </div>
+        {role === "faculty" && (
+          <div className="alert alert-warning small mb-4">
+            ⚠️ Faculty registration is allowed only if your account is approved
+            by the <b>Admin</b>.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
-                   {/* ---------------- College Selection (Dynamic) ---------------- */}
-<div className="mb-3">
-  <label className="form-label fw-semibold">Select College</label>
-  <select
-    name="college_id"
-    className={`form-select ${errors.college_id ? "is-invalid" : ""}`}
-    onChange={handleChange}
-  >
-    <option value="">
-      {loadingColleges ? "Loading Colleges..." : "Select College"}
-    </option>
 
-    {colleges.map(col => (
-      <option key={col.id} value={col.id}>{col.name}</option>
-    ))}
-  </select>
-{role === "user" && formData.college_id && (
-  <small className="text-muted">
-    Email should ideally end with <b>{colleges.find(c => c.id == formData.college_id)?.domain || "college domain"}</b>
-    <br/>Other domains → Registered as <span style={{color:'orange'}}>Guest</span>
-  </small>
-)}
-
-  {errors.college_id && <div className="invalid-feedback">{errors.college_id}</div>}
-</div>
-{["username", "email", "contact", "password"].map((field) => (
-  <div className="mb-3" key={field}>
-    <label className="form-label fw-semibold text-capitalize">
-      {field === "contact"
-        ? "Contact Number"
-        : field.charAt(0).toUpperCase() + field.slice(1)}
-    </label>
-{field === "password" ? (
-  <div style={{ position: "relative" }}>
-    <input
-      type={showPassword ? "text" : "password"}
-      className={`form-control ${errors[field] ? "is-invalid" : ""}`}
-      name={field}
-      placeholder="Enter password"
-      onChange={handleChange}
-    />
-    <PasswordEye
-      visible={showPassword}
-      onToggle={() => setShowPassword(v => !v)}
-    />
-  </div>
-) : (
-  <input
-    type={field === "email" ? "email" : field === "contact" ? "tel" : "text"}
-    className={`form-control ${errors[field] ? "is-invalid" : ""}`}
-    name={field}
-    placeholder={`Enter ${field}`}
-    onChange={handleChange}
-  />
-)}
-
-    {/* ⬇ ADD THIS RIGHT HERE UNDER INPUT */}
-    {field === "email" && role === "user" && emailStatus && (
-      <div
-        className="mt-1"
-        style={{
-          fontSize: "13px",
-          color: emailStatus === "student" ? "green" : "orange",
-          fontWeight: "600"
-        }}
-      >
-        {emailStatus === "student"
-          ? "✔ Verified College Email — Full Access"
-          : "⚠ External Email — Will be registered as Guest"}
-      </div>
-    )}
-
-    {errors[field] && (
-      <div className="invalid-feedback">{errors[field]}</div>
-    )}
-  </div>
-))}
-
-
- 
-
-
-          {/* Faculty */}
-   {role === "faculty" && (
-  <div className="mb-3">
-    <label className="form-label fw-semibold">Department</label>
-
-    <select
-      className={`form-select ${errors.department ? "is-invalid" : ""}`}
-      name="department"
-      onChange={handleChange}
-      disabled={!allDepartments.length}
-    >
-      <option value="">
-        {allDepartments.length ? "Select Department" : "Select college first"}
-      </option>
-
-      {allDepartments.map(dep => (
-        <option key={dep.id} value={dep.id}>
-          {dep.name}
-        </option>
-      ))}
-    </select>
-
-    {errors.department && (
-      <div className="invalid-feedback">{errors.department}</div>
-    )}
-  </div>
-)}
-
-
-
-          {/* User */}
-          {role === "user" && (
-  <>
-    <div className="mb-3">
-      <label className="form-label fw-semibold">Branch</label>
-
-      <select
-        className={`form-select ${errors.branch ? "is-invalid" : ""}`}
-        name="branch"
-        value={formData.branch}
-        onChange={handleChange}
-        disabled={!academicDepartments.length}
-      >
-        <option value="">
-          {academicDepartments.length
-            ? "Select Branch"
-            : "Select college first"}
-        </option>
-
-        {/* Special case */}
-        <option value="N/A">N/A</option>
-
-        {/* 🔥 Academic branches from DB */}
-        {academicDepartments.map(dep => (
-          <option key={dep.id} value={dep.name}>
-            {dep.name}
-          </option>
-        ))}
-      </select>
-
-      {errors.branch && (
-        <div className="invalid-feedback">{errors.branch}</div>
-      )}
-    </div>
-  
-
-
-
-{/* ---------------- Year & Semester (Auto N/A when branch=N/A) ---------------- */}
-{["year", "semester"].map((field) => {
-  const noCollegeSelected = !formData.college_id;
-
-  return (
-    <div
-      key={field}
-      className={`mb-3 transition-opacity ${
-        formData.branch === "N/A" || noCollegeSelected
-          ? "opacity-50"
-          : "opacity-100"
-      }`}
-      style={{
-        pointerEvents:
-          formData.branch === "N/A" || noCollegeSelected ? "none" : "auto",
-        transition: "0.3s",
-      }}
-    >
-      <label className="form-label fw-semibold text-capitalize">
-        {field}
-      </label>
-
-      <select
-        className={`form-select ${errors[field] ? "is-invalid" : ""}`}
-        name={field}
-        value={
-          formData.branch === "N/A" || noCollegeSelected
-            ? "N/A"
-            : formData[field]
-        }
-        onChange={handleChange}
-        disabled={formData.branch === "N/A" || noCollegeSelected}
-      >
-        {/* If college not selected → show Select College First */}
-        {noCollegeSelected && <option>Select college first</option>}
-
-        {/* N/A logic stays same */}
-        {formData.branch === "N/A" ? (
-          <option value="N/A">N/A</option>
-        ) : field === "year" ? (
-          settings ? (
-            <>
-              <option value="">Select {field}</option>
-              {Array.from({ length: settings.total_years }, (_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1} Year
+           {/* COLLEGE */}
+          <div className="mb-3">
+            <select
+              name="college_id"
+              className={`form-select-minimal ${
+                errors.college_id ? "is-invalid" : ""
+              }`}
+              onChange={handleChange}
+            >
+              <option value="">Select College</option>
+              {colleges.map((col) => (
+                <option key={col.id} value={col.id}>
+                  {col.name}
                 </option>
               ))}
-            </>
+            </select>
+            {errors.college_id && (
+              <div className="field-error">{errors.college_id}</div>
+            )}
+          </div>
+
+          {/* FULL NAME */}
+          <div className="mb-3">
+            <input
+              type="text"
+              name="username"
+              className={`form-control-minimal ${
+                errors.username ? "is-invalid" : ""
+              }`}
+              placeholder="Full Name"
+              onChange={handleChange}
+            />
+            {errors.username && (
+              <div className="field-error">{errors.username}</div>
+            )}
+          </div>
+
+          {/* EMAIL + CONTACT */}
+          <div className="row g-3 mb-3">
+            <div className="col-md-6">
+              <input
+                type="email"
+                name="email"
+                className={`form-control-minimal ${
+                  errors.email ? "is-invalid" : ""
+                }`}
+                placeholder="Email Address"
+                onChange={handleChange}
+              />
+
+              {emailStatus && role === "user" && (
+                <div
+                  className="mt-1 small"
+                  style={{
+                    color:
+                      emailStatus === "student" ? "#10B981" : "#F59E0B",
+                    fontWeight: 500,
+                  }}
+                >
+                  {emailStatus === "student"
+                    ? "✔ College email verified — Student access"
+                    : "⚠ Domain mismatch — Guest access"}
+                </div>
+              )}
+
+              {errors.email && (
+                <div className="field-error">{errors.email}</div>
+              )}
+            </div>
+
+            <div className="col-md-6">
+              <input
+                type="tel"
+                name="contact"
+                className={`form-control-minimal ${
+                  errors.contact ? "is-invalid" : ""
+                }`}
+                placeholder="Contact Number"
+                onChange={handleChange}
+              />
+              {errors.contact && (
+                <div className="field-error">{errors.contact}</div>
+              )}
+            </div>
+          </div>
+
+          {/* FACULTY / STUDENT FIELDS */}
+          {role === "faculty" ? (
+            <div className="mb-3">
+              <select
+                name="department"
+                className={`form-select-minimal ${
+                  errors.department ? "is-invalid" : ""
+                }`}
+                onChange={handleChange}
+              >
+                <option value="">Select Department</option>
+                {allDepartments.map((dep) => (
+                  <option key={dep.id} value={dep.id}>
+                    {dep.name}
+                  </option>
+                ))}
+              </select>
+              {errors.department && (
+                <div className="field-error">{errors.department}</div>
+              )}
+            </div>
           ) : (
-            <option>Loading...</option>
-          )
-        ) : (
-          settings ? (
             <>
-              <option value="">Select {field}</option>
-              {Array.from({ length: settings.total_semesters }, (_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1} Semester
-                </option>
-              ))}
-            </>
-          ) : (
-            <option>Loading...</option>
-          )
-        )}
-      </select>
+              <div className="mb-3">
+                <select
+                  name="branch"
+                  className={`form-select-minimal ${
+                    errors.branch ? "is-invalid" : ""
+                  }`}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Branch</option>
+                  <option value="N/A">N/A</option>
+                  {academicDepartments.map((dep) => (
+                    <option key={dep.id} value={dep.name}>
+                      {dep.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.branch && (
+                  <div className="field-error">{errors.branch}</div>
+                )}
+              </div>
 
-      {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
-    </div>
-  );
-})}
+              <div className="d-flex gap-3 mb-3">
+                <select
+                  name="year"
+                  className={`form-select-minimal ${
+                    errors.year ? "is-invalid" : ""
+                  }`}
+                  onChange={handleChange}
+                  disabled={formData.branch === "N/A"}
+                >
+                  <option value="">Year</option>
+                  {Array.from(
+                    { length: settings?.total_years },
+                    (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1} Year
+                      </option>
+                    )
+                  )}
+                </select>
 
+                <select
+                  name="semester"
+                  className={`form-select-minimal ${
+                    errors.semester ? "is-invalid" : ""
+                  }`}
+                  onChange={handleChange}
+                  disabled={formData.branch === "N/A"}
+                >
+                  <option value="">Semester</option>
+                  {Array.from(
+                    { length: settings?.total_semesters },
+                    (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1} Sem
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
 
-
-
+              {errors.year && (
+                <div className="field-error">{errors.year}</div>
+              )}
+              {errors.semester && (
+                <div className="field-error">{errors.semester}</div>
+              )}
             </>
           )}
 
-          {/* General error */}
-          {errors.general && (
-            <div className="alert alert-danger py-2">{errors.general}</div>
-          )}
+          {/* PASSWORD */}
+          <div className="mb-4 position-relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              className={`form-control-minimal ${
+                errors.password ? "is-invalid" : ""
+              }`}
+              placeholder="Set Password"
+              onChange={handleChange}
+            />
+            <div className="position-absolute end-0 top-50 translate-middle-y">
+              <PasswordEye
+                visible={showPassword}
+                onToggle={() => setShowPassword((v) => !v)}
+              />
+            </div>
+            {errors.password && (
+              <div className="field-error">{errors.password}</div>
+            )}
 
+
+
+          </div>
+
+          {/* SUBMIT */}
           <button
             type="submit"
-            className="btn btn-primary w-100 fw-semibold"
+            className="btn btn-primary w-100 py-2 fw-semibold rounded-2 mt-3 transition-all"
+            style={{
+              borderRadius: "12px",
+              backgroundColor: "#2d6bf1",
+              color: "white",
+              fontSize: "1rem",
+            }}
             disabled={success}
           >
-            {success ? "Registering..." : "Register"}
+            {success ? "Setting up..." : "Join Now →"}
           </button>
         </form>
       </div>
-
-      <footer className="mt-5 text-white-50 small text-center px-2">
-        © 2025 University Chatbot Portal. All Rights Reserved.
-      </footer>
     </div>
-  );
+  </div>
+);
+
 }
 
 export default RegisterPage;

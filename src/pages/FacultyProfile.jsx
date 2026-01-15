@@ -32,6 +32,7 @@ export default function FacultyProfile() {
   saving_profile: false 
       
   });
+  const [editFaculty, setEditFaculty] = useState(null);
 const user = JSON.parse(localStorage.getItem("user"));
   const [editMode, setEditMode] = useState(false); // ✅ toggle view/edit
 const [departments, setDepartments] = useState([]);
@@ -106,46 +107,54 @@ useEffect(() => {
 
 
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFaculty({ ...faculty, [name]: value });
-  };
+  const handleEditChange = (e) => {
+  const { name, value } = e.target;
+  setEditFaculty(prev => ({ ...prev, [name]: value }));
+};
 
-  const handleFileUpload = (e) => {
-    setFaculty({ ...faculty, biodata: e.target.files[0] });
-  };
+
+const handleFileUpload = (e) => {
+  setEditFaculty(prev => ({
+    ...prev,
+    biodata: e.target.files[0]
+  }));
+};
+
 
 const handleSave = async () => {
   const token = localStorage.getItem("token");
 
-  setFaculty(prev => ({ ...prev, saving_profile:true }));  // <--- start loader
+  setFaculty(prev => ({ ...prev, saving_profile: true }));
 
   const formData = new FormData();
-  formData.append("username", faculty.username);
-  formData.append("contact", faculty.contact);
-  formData.append("department", faculty.department);
-  formData.append("subject", faculty.subject);
-  formData.append("about", faculty.about);
-  if (faculty.biodata) {
-    formData.append("biodata", faculty.biodata);
+  formData.append("username", editFaculty.username);
+  formData.append("contact", editFaculty.contact);
+  formData.append("department", editFaculty.department);
+  formData.append("subject", editFaculty.subject);
+  formData.append("about", editFaculty.about);
+
+  if (editFaculty.biodata) {
+    formData.append("biodata", editFaculty.biodata);
   }
 
   const res = await fetch("http://127.0.0.1:5000/faculty/profile/save", {
     method: "POST",
-    headers: { "Authorization": token },
+    headers: { Authorization: token },
     body: formData
   });
 
   const data = await res.json();
 
   if (!data.error) {
-    setFaculty(prev => ({ ...prev, saving_profile:false }));
-    setEditMode(false);      // <--- go to view mode
+    setFaculty(editFaculty);   // ✅ commit
+    setEditFaculty(null);
+    setEditMode(false);
   } else {
     alert("Error saving profile: " + data.error);
-    setFaculty(prev => ({ ...prev, saving_profile:false }));
+    setFaculty(prev => ({ ...prev, saving_profile: false }));
   }
 };
+
 
 const handleDeleteBiodata = async () => {
   const token = localStorage.getItem("token");
@@ -204,7 +213,10 @@ const handleDeleteBiodata = async () => {
           {!editMode && (
             <button 
               className="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
-              onClick={() => setEditMode(true)}
+              onClick={() => {
+  setEditFaculty({ ...faculty }); // 👈 clone
+  setEditMode(true);
+}}
             >
               <FaUserEdit className="me-2" /> Edit Profile
             </button>
@@ -274,38 +286,30 @@ const handleDeleteBiodata = async () => {
               <div className="row g-4">
                 <div className="col-md-6">
                   <label className="form-label-pro">Full Name</label>
-                  <input type="text" className="form-input-clean" name="username" value={faculty.username} onChange={handleChange} />
+                  <input name="username"className="form-input-clean" value={editFaculty.username || ""} onChange={handleEditChange}/>
+
                 </div>
                 {/* CONTACT NUMBER */}
 <div className="col-md-6">
   <label className="form-label-pro">Contact Number</label>
-  <input
-    type="tel"
-    className="form-input-clean"
-    name="contact"
-    placeholder="+91 98765 43210"
-    value={faculty.contact}
-    onChange={handleChange}
-  />
+  <input type="tel" className="form-input-clean" name="contact"value={editFaculty.contact || ""} onChange={handleEditChange}/>
 </div>
 
                 <div className="col-md-6">
                   <label className="form-label-pro">Department</label>
-                  <select className="form-input-clean" name="department" value={faculty.department} onChange={handleChange}>
+                  <select name="department" className="form-input-clean" value={editFaculty.department || ""} onChange={handleEditChange}>
                     <option value="">Select Department</option>
                     {departments.map(dep => <option key={dep.id} value={dep.name}>{dep.name}</option>)}
                   </select>
                 </div>
                 <div className="col-md-12">
                   <label className="form-label-pro">Specialization Area</label>
-                  <input type="text" className="form-input-clean" name="subject" placeholder="e.g. Distributed Systems & Cloud Computing" value={faculty.subject} onChange={handleChange} />
+                  <input name="subject" className="form-input-clean" value={editFaculty.subject || ""} onChange={handleEditChange}/>
                 </div>
                 <div className="col-md-12">
                   <label className="form-label-pro">Personal Statement / Bio</label>
-                  <textarea className="form-input-clean" rows="5" name="about" value={faculty.about} onChange={handleChange}></textarea>
+                  <textarea name="about" className="form-input-clean" rows="5" value={editFaculty.about || ""} onChange={handleEditChange}/>
                 </div>
-                
-                {/* MODERN UPLOAD BOX */}
                 {/* MODERN UPLOAD & FILE MANAGEMENT */}
 <div className="col-md-12 mt-4">
   <div className="d-flex justify-content-between align-items-end mb-2">
@@ -327,7 +331,7 @@ const handleDeleteBiodata = async () => {
   </div>
 
   <div className="upload-zone-minimal position-relative">
-    {faculty.biodata ? (
+    {editFaculty?.biodata ? (
       <div className="d-flex align-items-center justify-content-between bg-white p-2 rounded-3 border">
         <div className="d-flex align-items-center gap-2">
           <FaFilePdf className="text-primary" />
@@ -335,12 +339,15 @@ const handleDeleteBiodata = async () => {
             className="text-slate-900 small fw-medium truncate"
             style={{ maxWidth: "200px" }}
           >
-            {faculty.biodata.name}
+            {editFaculty.biodata.name}
           </span>
         </div>
         <button
           className="btn btn-sm btn-light rounded-circle"
-          onClick={() => setFaculty({ ...faculty, biodata: null })}
+         onClick={() =>
+  setEditFaculty(prev => ({ ...prev, biodata: null }))
+}
+
         >
           ✕
         </button>
@@ -397,7 +404,10 @@ const handleDeleteBiodata = async () => {
               </div>
 
               <div className="d-flex gap-3 mt-5">
-                <button className="btn btn-slate-100 text-slate-600 rounded-pill px-4 fw-bold" onClick={() => setEditMode(false)}>Discard</button>
+                <button className="btn btn-slate-100 text-slate-600 rounded-pill px-4 fw-bold"   onClick={() => {
+    setEditFaculty(null);   // 🔥 discard changes
+    setEditMode(false);
+  }}>Discard</button>
                 <button 
                   className="btn btn-primary rounded-pill px-5 fw-bold shadow-primary" 
                   onClick={handleSave}

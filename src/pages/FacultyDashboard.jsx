@@ -562,22 +562,30 @@ async function handleDelete(id) {
                           <FaEye size={18} />
                         </button>
                         
-                        {confirmDeleteId === item.id ? (
-  deletingIds.has(item.id) ? (
-    <div className="spinner-border spinner-border-sm text-danger" />
-  ) : (
-    <div className="d-flex align-items-center gap-2 animate-fade-in">
-      <FaCheck
-        className="text-success cursor-pointer"
-        onClick={() => handleDelete(item.id)}
-      />
-      <FaTimes
-        className="text-secondary cursor-pointer"
-        onClick={() => setConfirmDeleteId(null)}
-      />
-    </div>
-  )
+                        {deletingIds.has(item.id) ? (
+  // 🔥 ALWAYS show spinner if deleting
+  <div className="spinner-border spinner-border-sm text-danger" />
+) : confirmDeleteId === item.id ? (
+  // 🟡 Confirmation UI
+  <div className="d-flex align-items-center gap-2 animate-fade-in">
+    <span className="text-muted small fw-semibold">
+      Are you sure?
+    </span>
+
+    <FaCheck
+      className="text-success cursor-pointer"
+      title="Confirm delete"
+      onClick={() => handleDelete(item.id)}
+    />
+
+    <FaTimes
+      className="text-secondary cursor-pointer"
+      title="Cancel"
+      onClick={() => setConfirmDeleteId(null)}
+    />
+  </div>
 ) : (
+  // 🔴 Default delete icon
   <button
     className="btn-icon text-danger"
     onClick={() => setConfirmDeleteId(item.id)}
@@ -585,6 +593,7 @@ async function handleDelete(id) {
     <FaTrashAlt size={16} />
   </button>
 )}
+
 
                       </div>
                     </div>

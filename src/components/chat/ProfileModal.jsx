@@ -241,7 +241,7 @@ export default function ProfileModal({
                       })
                     }
                   >
-                    <option value="">Select Department</option>
+                    <option value="">N/A</option>
                     {departments.map(d => (
                       <option key={d.id} value={d.id}>
                         {d.name}
@@ -262,6 +262,7 @@ export default function ProfileModal({
                       }))
                     }
                   >
+                    <option value="">N/A</option>
                     {Array.from(
                       { length: settings?.total_years || 0 },
                       (_, i) => (
@@ -287,6 +288,7 @@ export default function ProfileModal({
                       }))
                     }
                   >
+                    <option value="">N/A</option>
                     {Array.from(
                       { length: settings?.total_semesters || 0 },
                       (_, i) => (

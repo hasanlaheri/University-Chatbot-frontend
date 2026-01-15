@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "../styles/chat.css";
-import LogoutButton from "../components/LogoutButton";
 import Sidebar from "../components/chat/Sidebar";
 import ProfileModal from "../components/chat/ProfileModal";
 import ChatLayout from "../components/chat/ChatLayout";
 import { useNavigate} from "react-router-dom";
+import { authFetch } from "../utils/AuthFetch"
 
 export default function UserChat() {
   
@@ -24,6 +24,14 @@ const [filter, setFilter] = useState({
   year: "",
   semester: ""
 });
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/");
+  }
+}, []);
+
 const [showChangePassword, setShowChangePassword] = useState(false);
 
 const [passwordForm, setPasswordForm] = useState({
@@ -177,12 +185,10 @@ const handleDeleteAccount = async () => {
   setDeletingAccount(true);
 
   try {
-    const res = await fetch("http://localhost:5000/user/delete-account", {
-      method: "DELETE",
-      headers: {
-        Authorization: localStorage.getItem("token"),
-      },
-    });
+    const res = await authFetch("http://localhost:5000/user/delete-account", {
+  method: "DELETE",
+});
+
 
     if (!res.ok) {
       setDeletingAccount(false);
@@ -333,21 +339,11 @@ useEffect(() => {
   async function loadSessions() {
     const email = localStorage.getItem("email");
 
-    const res = await fetch(
-      `http://localhost:5000/chat/list?user_email=${email}`,
-      {
-        headers: { Authorization: localStorage.getItem("token") }
-      }
-    );
+    const res = await authFetch(
+  `http://localhost:5000/chat/list?user_email=${email}`
+);
 
-    // 🔥 HANDLE ACCOUNT DELETED
-    if (res.status === 401) {
-      alert("⚠ Your account has been deleted. Logging out...");
-      localStorage.clear();
-      setTimeout(() => (window.location.href = "/"), 800);
-      return;
-    }
-
+   
     if (!res.ok) return;
 
     const data = await res.json();
@@ -367,19 +363,10 @@ React.useEffect(() => {
     const exists = sessions.some(s => s.id === currentSessionId);
     if (!exists) return;
 
-    const res = await fetch(
-      `http://localhost:5000/chat/${currentSessionId}/messages`,
-      {
-        headers: { Authorization: localStorage.getItem("token") },
-      }
-    );
+    const res = await authFetch(
+  `http://localhost:5000/chat/${currentSessionId}/messages`
+);
 
-    if (res.status === 401) {
-      alert("⚠ Your account has been deleted. Logging out...");
-      localStorage.clear();
-      setTimeout(() => (window.location.href = "/"), 800);
-      return;
-    }
 
     const data = await res.json();
 
@@ -445,11 +432,10 @@ async function sendMessage() {
   let sessionId = currentSessionId;
 
   if (!sessionId) {
-  const res = await fetch("http://localhost:5000/chat/new", {
+  const res = await authFetch("http://localhost:5000/chat/new", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      Authorization: localStorage.getItem("token"),
     },
     body: JSON.stringify({ user_email: localStorage.getItem("email") }),
   });
@@ -476,12 +462,11 @@ async function sendMessage() {
   setTypingSessionId(sessionId);
 
   try {
-    const res = await fetch(`http://localhost:5000/chat/${sessionId}/send`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        Authorization: localStorage.getItem("token"),
-      },
+    const res = await authFetch(
+  `http://localhost:5000/chat/${sessionId}/send`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: userMessage,
         mode,
@@ -618,13 +603,10 @@ const handleChangePassword = async () => {
   }
 
   try {
-    const res = await fetch("http://localhost:5000/change-password", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: localStorage.getItem("token"),
-      },
-      body: JSON.stringify({
+    const res = await authFetch("http://localhost:5000/change-password", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" }, 
+     body: JSON.stringify({
         current_password: currentPassword,
         new_password: newPassword,
       }),

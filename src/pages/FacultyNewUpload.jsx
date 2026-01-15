@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaCloudUploadAlt } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import "../styles/faculty.css";
 
 export default function FacultyUpload() {
   const [departments, setDepartments] = useState([]);
@@ -153,188 +153,156 @@ useEffect(() => {
 }, []);
 
   return (
+  <div
+    className="min-vh-100 d-flex justify-content-center align-items-center p-3"
+    style={{
+      background: "radial-gradient(circle at top left, #eef5ff, #dae9ff)",
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
+    }}
+  >
+    <ToastContainer position="top-right" autoClose={3000} newestOnTop />
+
+    {/* SPIRAL LOADING OVERLAY */}
+    {loading && (
+      <div className="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+        style={{ zIndex: 9999, background: "rgba(255, 255, 255, 0.7)", backdropFilter: "blur(6px)" }}>
+        <div className="custom-spinner"></div>
+        <h5 className="mt-4 fw-bold text-primary animate-pulse">Processing Material...</h5>
+      </div>
+    )}
+
     <div
-      className="min-vh-100 d-flex justify-content-center align-items-start p-4"
-      style={{
-        background: "linear-gradient(135deg, #e9f2ff, #d7e9ff)",
-        color: "white",
-        fontFamily: "Poppins"
+      className="card border-0 shadow-xl overflow-hidden"
+      style={{ 
+        width: "100%", 
+        maxWidth: "680px", 
+        borderRadius: "24px",
+        background: "rgba(255, 255, 255, 0.9)",
+        backdropFilter: "blur(10px)"
       }}
     >
-      <ToastContainer
-  position="top-right"
-  autoClose={3000}
-  hideProgressBar={false}
-  newestOnTop
-  closeOnClick
-  pauseOnHover
-/>
-
-      <div
-        className="card shadow-lg border-0 p-4 mt-3"
-        style={{ width: "100%", maxWidth: "650px", borderRadius: "18px" }}
-      >
-        <div className="text-center mb-4">
-          <FaCloudUploadAlt size={60} className="text-primary mb-2" />
-          <h3 className="fw-bold text-primary mb-1">Upload New Material</h3>
-          <p className="text-muted small">
-            Help students stay updated by uploading new resources
-          </p>
+      <div className="p-4 p-md-5">
+        <div className="text-center mb-5">
+          <div className="icon-badge mb-3">
+            <FaCloudUploadAlt size={32} />
+          </div>
+          <h2 className="fw-bold text-dark mb-1">Upload Material</h2>
+          <p className="text-secondary small">Empower your students with fresh resources</p>
         </div>
 
-        <div className="row g-3">
+        <div className="row g-4">
+          {/* Classification Section */}
+          <div className="col-12">
+            <div className="section-header">
+              <span className="small fw-bold text-primary text-uppercase">Classification</span>
+            </div>
+          </div>
 
-          {/* Department */}
           <div className="col-md-6">
-            <label className="form-label fw-semibold text-muted">Department</label>
-            <select className="form-select rounded-3 shadow-sm"
+            <label className="custom-label">Department</label>
+            <select className="custom-input form-select shadow-none"
               name="department_id" value={form.department_id} onChange={handleChange} disabled={loading}>
-              <option value="">Select...</option>
-              {departments.map(dep => (
-  <option key={dep.id} value={dep.id}>{dep.name}</option>
-
-))}
-
+              <option value="">Choose Dept</option>
+              {departments.map(dep => <option key={dep.id} value={dep.id}>{dep.name}</option>)}
             </select>
           </div>
 
-          {/* Category */}
           <div className="col-md-6">
-            <label className="form-label fw-semibold text-muted">Category</label>
-            <select className="form-select rounded-3 shadow-sm"
+            <label className="custom-label">Resource Type</label>
+            <select className="custom-input form-select shadow-none"
               name="category" value={form.category} onChange={handleChange} disabled={loading}>
-              <option value="">Select...</option>
+              <option value="">Select Category</option>
               <option value="Notes">Notes</option>
               <option value="Notice">Notice</option>
-              <option value="Time table">Time table</option>
+              <option value="Timetable">Time Table</option>
               <option value="Assignment">Assignment</option>
+              <option value="Exam">Exam Question Bank</option>
+              <option value="Test">Test Question Bank</option>
             </select>
           </div>
-          {/* Visibility */}
-<div className="col-md-6">
-  <label className="form-label fw-semibold text-muted">Visibility</label>
-  <select
-    className="form-select rounded-3 shadow-sm"
-    name="visibility"
-    value={form.visibility}
-    onChange={handleChange}
-    disabled={loading}
-  >
-    <option value="public">Public (Students + Guests)</option>
-    <option value="private">Private (Students only)</option>
-  </select>
-</div>
 
+          {/* Academic Scope Section */}
+          <div className="col-12 mt-4">
+            <div className="section-header">
+              <span className="small fw-bold text-primary text-uppercase">Academic Scope</span>
+            </div>
+          </div>
 
-{/* Year */}
-<div className="col-md-6">
-  <label className="form-label fw-semibold text-muted">Year</label>
+          <div className="col-md-4">
+            <label className="custom-label">Visibility</label>
+            <select className="custom-input form-select shadow-none"
+              name="visibility" value={form.visibility} onChange={handleChange} disabled={loading}>
+              <option value="public">🌍 Public</option>
+              <option value="private">🔒 Private</option>
+            </select>
+          </div>
 
-  {!settings ? (
-    <select className="form-select rounded-3 shadow-sm" disabled>
-      <option>Loading...</option>
-    </select>
-  ) : (
-    <select
-      className="form-select rounded-3 shadow-sm"
-      name="year"
-      value={form.year}
-      onChange={handleChange}
-      disabled={disableYearSem || loading}
-    >
-      <option value="">Select...</option>
+          <div className="col-md-4">
+            <label className="custom-label">Year</label>
+            <select className="custom-input form-select shadow-none"
+              name="year" value={form.year} onChange={handleChange} disabled={disableYearSem || loading}>
+              {!settings ? <option>...</option> : (
+                <>
+                  <option value="">Year</option>
+                  {Array.from({ length: settings.total_years }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1} Year</option>
+                  ))}
+                </>
+              )}
+            </select>
+          </div>
 
-      {Array.from({ length: settings.total_years }, (_, i) => (
-        <option key={i + 1} value={i + 1}>
-          {i + 1} Year
-        </option>
-      ))}
-    </select>
-  )}
-</div>
+          <div className="col-md-4">
+            <label className="custom-label">Semester</label>
+            <select className="custom-input form-select shadow-none"
+              name="semester" value={form.semester} onChange={handleChange} disabled={disableYearSem || loading}>
+              {!settings ? <option>...</option> : (
+                <>
+                  <option value="">Sem</option>
+                  {Array.from({ length: settings.total_semesters }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>Sem {i + 1}</option>
+                  ))}
+                </>
+              )}
+            </select>
+          </div>
 
-{/* Semester */}
-<div className="col-md-6">
-  <label className="form-label fw-semibold text-muted">Semester</label>
-
-  {!settings ? (
-    <select className="form-select rounded-3 shadow-sm" disabled>
-      <option>Loading...</option>
-    </select>
-  ) : (
-    <select
-      className="form-select rounded-3 shadow-sm"
-      name="semester"
-      value={form.semester}
-      onChange={handleChange}
-      disabled={disableYearSem || loading}
-    >
-      <option value="">Select...</option>
-
-      {Array.from({ length: settings.total_semesters }, (_, i) => (
-        <option key={i + 1} value={i + 1}>
-          Sem {i + 1}
-        </option>
-      ))}
-    </select>
-  )}
-</div>
-
-
-
-          {/* File */}
-       {/* File */}
-<div className="col-12">
-  <label className="form-label fw-semibold text-muted">Upload File (Max 5MB)</label>
-
-  {form.file ? (
-    <div className="d-flex align-items-center justify-content-between mt-2 px-2 py-1 bg-light rounded-3 shadow-sm">
-      <small className="text-success">
-        Uploaded: <strong>{form.file.name}</strong>
-      </small>
-      <button
-        className="btn btn-sm btn-outline-danger border-0"
-        onClick={() => setForm({ ...form, file: null })}
-        title="Remove file"
-      >
-        ✕
-      </button>
-    </div>
-  ) : (
-    <input
-      type="file"
-      className="form-control rounded-3 shadow-sm"
-      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-      onChange={handleFile}
-      disabled={loading}
-    />
-  )}
-</div>
-
+          {/* File Upload Section */}
+          <div className="col-12 mt-4">
+            <div className={`upload-zone ${form.file ? 'file-active' : ''}`}>
+              <label className="custom-label text-center d-block mb-3">Material File (Max 5MB)</label>
+              
+              {form.file ? (
+                <div className="file-preview d-flex align-items-center justify-content-between p-3 rounded-3">
+                  <div className="d-flex align-items-center">
+                    <div className="file-icon me-3">📄</div>
+                    <span className="text-truncate" style={{ maxWidth: '250px' }}>{form.file.name}</span>
+                  </div>
+                  <button className="btn-close-custom" onClick={() => setForm({ ...form, file: null })} disabled={loading}>✕</button>
+                </div>
+              ) : (
+                <div className="position-relative">
+                  <input type="file" className="file-input-hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={handleFile} disabled={loading} />
+                  <div className="file-dummy p-4 text-center">
+                    <span className="text-muted small">Click to browse or drag & drop</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <small className="text-muted d-block mt-3">
-          * Allowed formats: PDF, DOC, DOCX, PNG, JPG <br />
-          * Keep file name clean & readable <br />
-          * Do not upload duplicate material
-        </small>
-
-        <button
-  className="btn btn-primary w-100 mt-4 py-2 fw-semibold rounded-pill shadow-sm"
-  style={{ background: "linear-gradient(135deg, #007bff, #0056b3)", border: "none" }}
-  onClick={handleUpload}
-  disabled={loading}
->
-  {loading ? "Uploading..." : "Upload Material"}
-</button>
-
-
-        <button
-          className="btn btn-outline-secondary w-100 mt-3 rounded-pill"
-          onClick={()=>navigate(`/${user.college_code.toLowerCase()}/${user.role}`)}>
-          Cancel
-        </button>
+        <div className="mt-5 pt-2">
+          <button className="btn-primary-gradient w-100 py-3 mb-3" onClick={handleUpload} disabled={loading}>
+            {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : 'Publish Resource'}
+          </button>
+          
+          <button className="btn-cancel w-100 py-2" onClick={()=>navigate(`/${user.college_code.toLowerCase()}/${user.role}`)}>
+            Cancel Request
+          </button>
+        </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

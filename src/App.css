@@ -398,6 +398,116 @@ body {
 
 
 
+/* Typography & Color Palette */
+.text-slate-900 { color: #0f172a; }
+.text-slate-500 { color: #64748b; }
+.text-slate-400 { color: #94a3b8; }
+.tracking-tighter { letter-spacing: -0.05em; }
+.x-small { font-size: 0.72rem; }
+
+/* Light Theme Input Controls */
+.label-light {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #475569;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.input-light {
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-light:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.05);
+  outline: none;
+}
+
+/* Light Error Styling */
+.alert-light-error {
+  background-color: #fff1f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Hover States */
+.hover-dark:hover {
+  color: #0f172a !important;
+}
 
 
 
+/* Minimalist Inputs */
+.form-control-minimal, .form-select-minimal {
+  width: 100%;
+  padding: 12px 36px 12px 14px; 
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid #F3F4F6;
+  border-radius: 0;
+  font-size: 16px;
+  color: #111827;
+  transition: all 0.3s ease;
+}
+
+.form-control-minimal:focus, .form-select-minimal:focus {
+  outline: none;
+  border-bottom-color: #000000;
+  box-shadow: none;
+}
+
+.form-control-minimal::placeholder {
+  color: #9CA3AF;
+  font-weight: 400;
+}
+
+/* Custom Select Styling */
+.form-select-minimal {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%239CA3AF' d='M1 0l4 4 4-4 1 1-5 5L0 1z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px 6px;
+  padding-right: 32px;
+}
+
+.field-error {
+  font-size: 12px;
+  color: #DC2626;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Custom Spiral Animation */
+.spinner-border {
+  border-right-color: transparent !important;
+  animation: spiral-rotate 0.75s linear infinite;
+}
+
+@keyframes spiral-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Ensure the background stays fixed during overlays */
+body.modal-open {
+  overflow: hidden;
+}
+
+.form-select-minimal:disabled {
+  background-color: #F3F4F6;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
