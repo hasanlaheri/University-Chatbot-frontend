@@ -14,7 +14,6 @@ import {
   FaFilter,
   FaSyncAlt,
   FaLock ,
-  FaArrowLeft,
   FaFolderOpen,
   FaEyeSlash 
 } from "react-icons/fa";
@@ -607,115 +606,130 @@ async function handleDelete(id) {
     </div>
 {showFilter && (
   <>
-    {/* backdrop */}
+    {/* Backdrop with Blur */}
     <div
-      className="position-fixed top-0 start-0 w-100 h-100"
-      style={{ background: "rgba(0,0,0,0.3)", zIndex: 9998 }}
+      className="position-fixed top-0 start-0 w-100 h-100 fadeIn"
+      style={{ 
+        background: "rgba(15, 23, 42, 0.4)", 
+        backdropFilter: "blur(4px)",
+        zIndex: 9998 
+      }}
       onClick={() => setShowFilter(false)}
     />
 
-    {/* drawer */}
+    {/* Drawer */}
     <div
-      className="position-fixed top-0 end-0 h-100 bg-white shadow-lg p-4"
-      style={{ width: "300px", zIndex: 9999 }}
+      className="position-fixed top-0 end-0 h-100 bg-white shadow-2xl d-flex flex-column slideInRight"
+      style={{ width: "340px", zIndex: 9999, borderLeft: "1px solid #e2e8f0" }}
     >
-      <h6 className="fw-bold mb-3">Filters</h6>
+      {/* Header */}
+      <div className="p-4 border-bottom d-flex justify-content-between align-items-center bg-light">
+        <div>
+          <h5 className="fw-bold text-slate-900 mb-0">Filters</h5>
+          <span className="text-slate-500 x-small">Refine your search results</span>
+        </div>
+        <button 
+          className="btn-close shadow-none" 
+          onClick={() => setShowFilter(false)} 
+        />
+      </div>
 
-      {/* YEAR */}
-      <label className="form-label">Year</label>
-      <select
-  className="form-select mb-3"
-  value={draftYear}
-  onChange={e => {
-    setDraftYear(e.target.value);
-    setDraftSem("");
-  }}
->
+      {/* Scrollable Body */}
+      <div className="p-4 flex-grow-1 overflow-auto">
+        
+        {/* YEAR SECTION */}
+        <div className="mb-4">
+          <label className="fw-bold text-slate-700 small mb-2 d-block">Academic Year</label>
+          <div className="d-flex flex-wrap gap-2">
+            <button 
+              className={`filter-pill ${!draftYear ? 'active' : ''}`}
+              onClick={() => {setDraftYear(""); setDraftSem("");}}
+            >
+              All Years
+            </button>
+            {settings && Array.from({ length: settings.total_years }, (_, i) => (
+              <button 
+                key={i + 1}
+                className={`filter-pill ${draftYear == i + 1 ? 'active' : ''}`}
+                onClick={() => {setDraftYear(i + 1); setDraftSem("");}}
+              >
+                {i + 1}{i === 0 ? 'st' : i === 1 ? 'nd' : 'rd'} Year
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <option value="">All</option>
-        {settings &&
-          Array.from({ length: settings.total_years }, (_, i) => (
-            <option key={i + 1} value={i + 1}>
-              {i + 1} Year
-            </option>
-          ))}
-      </select>
+       {/* SEMESTER SECTION (Pill Version) */}
+<div className={`mb-4 transition-all ${!draftYear ? 'opacity-25 pointer-events-none' : ''}`}>
+  <label className="fw-bold text-slate-700 small mb-2 d-block">Semester</label>
+  <div className="d-flex gap-2">
+    {draftYear ? (
+      [draftYear * 2 - 1, draftYear * 2].map(sem => (
+        <button
+          key={sem}
+          type="button"
+          className={`filter-pill flex-fill ${draftSem == sem ? 'active' : ''}`}
+          onClick={() => setDraftSem(draftSem == sem ? "" : sem)}
+        >
+          Sem {sem}
+        </button>
+      ))
+    ) : (
+      <span className="text-muted x-small">Please select a year first</span>
+    )}
+  </div>
+</div>
 
-      {/* SEM */}
-      <label className="form-label">Semester</label>
-      <select
-  className="form-select mb-3"
-  value={draftSem}
-  disabled={!draftYear}
-  onChange={e => setDraftSem(e.target.value)}
->
+        {/* CATEGORY SECTION */}
+        <div className="mb-4">
+          <label className="fw-bold text-slate-700 small mb-2 d-block">Document Category</label>
+          <div className="d-grid gap-2">
+           {Object.keys(stats.categories || {}).map(cat => (
+              <div 
+                key={cat}
+                className={`category-item p-3 rounded-3 border d-flex justify-content-between align-items-center cursor-pointer ${draftCategory === cat ? 'border-primary bg-primary-soft' : 'border-slate-100'}`}
+                onClick={() => setDraftCategory(draftCategory === cat ? "" : cat)}
+              >
+                <span className={`small fw-medium ${draftCategory === cat ? 'text-primary' : 'text-slate-600'}`}>{cat}</span>
+                {draftCategory === cat && <FaCheck size={12} className="text-primary" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-        <option value="">All</option>
-        {settings &&
-          Array.from({ length: settings.total_semesters }, (_, i) => (
-            <option key={i + 1} value={i + 1}>
-              Sem {i + 1}
-            </option>
-          ))}
-      </select>
-
-      {/* CATEGORY */}
-      <label className="form-label">Category</label>
-      <select
-  className="form-select mb-4"
-  value={draftCategory}
-  onChange={e => setDraftCategory(e.target.value)}
->
-
-        <option value="">All</option>
-        <option value="Notes">Notes</option>
-        <option value="Notice">Notice</option>
-        <option value="Assignment">Assignment</option>
-      </select>
-
-      <div className="d-flex gap-2">
-<button
-  className="btn btn-secondary w-50"
-onClick={() => {
-  navigate("");          // 🔥 clears URL
-  setAppliedFilters(null);
-  setUploads([]);
-  setShowFilter(false);
-}}
->
-  Clear
-</button>
-
-
-
-<button
-  className="btn btn-primary w-50"
-onClick={() => {
-  const params = new URLSearchParams();
-
-  if (draftYear) params.set("year", draftYear);
-  if (draftSem) params.set("semester", draftSem);
-  if (draftCategory) params.set("category", draftCategory);
-  if (draftSearch) params.set("search", draftSearch);
-
-  navigate(`?${params.toString()}`);
-
-  setAppliedFilters({
-    year: draftYear,
-    semester: draftSem,
-    category: draftCategory,
-    search: draftSearch
-  });
-
-  setShowFilter(false);
-}}
-
->
-  Apply
-</button>
-
-
-
+      {/* Footer Actions */}
+      <div className="p-4 border-top bg-light">
+        <div className="d-flex gap-3">
+          <button
+            className="btn btn-link text-slate-500 text-decoration-none fw-semibold w-50"
+            onClick={() => {
+              navigate("");
+              setDraftYear("");
+              setDraftSem("");
+              setDraftCategory("");
+              setAppliedFilters(null);
+              setUploads([]);
+              setShowFilter(false);
+            }}
+          >
+            Reset All
+          </button>
+          <button
+            className="btn btn-primary rounded-3 w-50 fw-bold shadow-sm"
+            onClick={() => {
+              const params = new URLSearchParams();
+              if (draftYear) params.set("year", draftYear);
+              if (draftSem) params.set("semester", draftSem);
+              if (draftCategory) params.set("category", draftCategory);
+              navigate(`?${params.toString()}`);
+              setAppliedFilters({ year: draftYear, semester: draftSem, category: draftCategory });
+              setShowFilter(false);
+            }}
+          >
+            Apply Filters
+          </button>
+        </div>
       </div>
     </div>
   </>

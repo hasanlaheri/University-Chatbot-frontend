@@ -231,3 +231,53 @@
   animation: spin 1s linear infinite;
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Filter Side-Drawer Custom Styles */
+.filter-pill {
+  padding: 6px 16px;
+  border-radius: 50px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.filter-pill.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
+.category-item {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.category-item:hover {
+  background-color: #f8fafc;
+}
+
+.bg-primary-soft {
+  background-color: #eff6ff;
+}
+
+.slideInRight {
+  animation: slideInRight 0.3s forwards;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.fadeIn {
+  animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

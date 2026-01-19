@@ -483,6 +483,51 @@ body {
   padding-right: 32px;
 }
 
+/* 1. Fix the background and text color for minimalist inputs */
+.form-control-minimal:-webkit-autofill,
+.form-control-minimal:-webkit-autofill:hover, 
+.form-control-minimal:-webkit-autofill:focus, 
+.form-control-minimal:-webkit-autofill:active {
+    /* Covers the blue/yellow with a solid white background */
+    -webkit-box-shadow: 0 0 0 1000px white inset !important;
+    
+    /* Sets the text color to your design's dark slate */
+    -webkit-text-fill-color: #111827 !important;
+    
+    /* Prevents the background color from flickering back */
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Container Animations */
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Student Verified Style */
+.status-student {
+  background-color: #ecfdf5; /* Emerald 50 */
+  color: #065f46;            /* Emerald 800 */
+  border-color: #a7f3d0 !important;
+}
+
+/* Guest Style */
+.status-guest {
+  background-color: #fffbeb; /* Amber 50 */
+  color: #92400e;            /* Amber 800 */
+  border-color: #fde68a !important;
+}
+
+.status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .field-error {
   font-size: 12px;
   color: #DC2626;
@@ -511,3 +556,42 @@ body.modal-open {
   color: #9CA3AF;
   cursor: not-allowed;
 }
+
+/* Role Context Cards */
+.role-context-card {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.student-info {
+  background-color: #f0f7ff; /* Soft Blue */
+  border-color: #e0eefe;
+}
+
+.student-info .icon-wrapper {
+  color: #3b82f6;
+  font-size: 1.2rem;
+}
+
+.faculty-warning {
+  background-color: #fffbeb; /* Soft Amber */
+  border-color: #fef3c7;
+}
+
+.faculty-warning .icon-wrapper {
+  color: #d97706;
+  font-size: 1.2rem;
+}
+
+.x-small {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.leading-tight {
+  line-height: 1.25;
+}
+
+

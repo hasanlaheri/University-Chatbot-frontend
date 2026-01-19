@@ -6,11 +6,12 @@ import {
   FaRegCommentDots,
   FaEllipsisH,
   FaBars,
-  FaPowerOff,
   FaUserCircle,
   FaTrash,
   FaEdit
 } from "react-icons/fa";
+
+import { FiLogOut } from "react-icons/fi";
 
 import LogoutButton from "../LogoutButton";
 
@@ -294,7 +295,7 @@ export default function Sidebar({
                 window.location.href = "/";
               }}
             >
-              <FaPowerOff size={18} />
+              <FiLogOut size={18} />
             </button>
           </div>
         </div>

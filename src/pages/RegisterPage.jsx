@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import '../App.css';
 import PasswordEye from "../components/PasswordEye";
-
+import {FaInfoCircle,FaShieldAlt, FaCheckCircle,FaExclamationTriangle} from "react-icons/fa";
 
 function RegisterPage() {
   const { role } = useParams();
@@ -39,6 +39,29 @@ const [showPassword, setShowPassword] = useState(false);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+
+    if (name === "branch" && value === "N/A") {
+    // 🔥 If Branch is N/A, clear Year and Semester immediately
+    setFormData((prev) => ({
+      ...prev,
+      branch: value,
+      year: "",
+      semester: "",
+    }));
+  } else if (name === "year") {
+    // 🔥 If Year changes, clear Semester to keep data valid
+    setFormData((prev) => ({
+      ...prev,
+      year: value,
+      semester: "",
+    }));
+  } else {
+    // Normal update for other fields
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
 
     let errorMsg = "";
 
@@ -312,21 +335,38 @@ return (
           Fill in your details to customize your experience.
         </p>
 
-        {/* 🔔 ROLE NOTE */}
-        {role === "user" && (
-          <div className="alert alert-info small mb-4">
-            ℹ️ If your email matches the selected college domain, you will be
-            registered as a <b>Student</b>. Otherwise, you will be registered as
-            a <b>Guest</b>.
-          </div>
-        )}
+       {/* 🔔 ROLE-BASED CONTEXT NOTES */}
+{role === "user" && (
+  <div className="role-context-card student-info mb-4">
+    <div className="d-flex gap-3 align-items-center">
+      <div className="icon-wrapper">
+        <FaInfoCircle />
+      </div>
+      <div>
+        <p className="mb-0 fw-semibold text-slate-800 small">Registration Logic</p>
+        <p className="mb-0 text-slate-500 x-small">
+          Students must use their <b>college domain email</b>. Non-college emails will be registered as <b>Guest</b> accounts.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
 
-        {role === "faculty" && (
-          <div className="alert alert-warning small mb-4">
-            ⚠️ Faculty registration is allowed only if your account is approved
-            by the <b>Admin</b>.
-          </div>
-        )}
+{role === "faculty" && (
+  <div className="role-context-card faculty-warning mb-4">
+    <div className="d-flex gap-3 align-items-center">
+      <div className="icon-wrapper">
+        <FaShieldAlt />
+      </div>
+      <div>
+        <p className="mb-0 fw-semibold text-slate-900 small">Approval Required</p>
+        <p className="mb-0 text-slate-600 x-small leading-tight">
+          Faculty access is restricted. Your account will remain <b>pending</b> until verified by the <b>Department Admin</b>.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
 
         <form onSubmit={handleSubmit}>
 
@@ -381,19 +421,32 @@ return (
               />
 
               {emailStatus && role === "user" && (
-                <div
-                  className="mt-1 small"
-                  style={{
-                    color:
-                      emailStatus === "student" ? "#10B981" : "#F59E0B",
-                    fontWeight: 500,
-                  }}
-                >
-                  {emailStatus === "student"
-                    ? "✔ College email verified — Student access"
-                    : "⚠ Domain mismatch — Guest access"}
-                </div>
-              )}
+  <div 
+    className={`d-flex align-items-center gap-2 mt-2 p-2 rounded-3 animate-slide-down ${
+      emailStatus === "student" ? "status-student" : "status-guest"
+    }`}
+    style={{ fontSize: '0.75rem', border: '1px solid transparent' }}
+  >
+    <div className="status-icon">
+      {emailStatus === "student" ? (
+        <FaCheckCircle size={14} />
+      ) : (
+        <FaExclamationTriangle size={14} />
+      )}
+    </div>
+    
+    <div className="flex-grow-1">
+      <span className="fw-bold d-block" style={{ lineHeight: '1' }}>
+        {emailStatus === "student" ? "Student Account" : "Guest Account"}
+      </span>
+      <span className="opacity-75">
+        {emailStatus === "student" 
+          ? "Domain verified for full campus access" 
+          : "Limited access due to domain mismatch"}
+      </span>
+    </div>
+  </div>
+)}
 
               {errors.email && (
                 <div className="field-error">{errors.email}</div>
@@ -460,45 +513,48 @@ return (
                 )}
               </div>
 
-              <div className="d-flex gap-3 mb-3">
-                <select
-                  name="year"
-                  className={`form-select-minimal ${
-                    errors.year ? "is-invalid" : ""
-                  }`}
-                  onChange={handleChange}
-                  disabled={formData.branch === "N/A"}
-                >
-                  <option value="">Year</option>
-                  {Array.from(
-                    { length: settings?.total_years },
-                    (_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1} Year
-                      </option>
-                    )
-                  )}
-                </select>
+             <div className="d-flex gap-3 mb-3">
+  {/* YEAR SELECT */}
+  <select
+    name="year"
+    value={formData.year} // 👈 Added this to ensure it clears visually
+    className={`form-select-minimal ${errors.year ? "is-invalid" : ""}`}
+    onChange={handleChange}
+    disabled={formData.branch === "N/A"}
+  >
+    <option value="">Year</option>
+    {Array.from({ length: settings?.total_years || 0 }, (_, i) => (
+      <option key={i + 1} value={i + 1}>
+        {i + 1} Year
+      </option>
+    ))}
+  </select>
 
-                <select
-                  name="semester"
-                  className={`form-select-minimal ${
-                    errors.semester ? "is-invalid" : ""
-                  }`}
-                  onChange={handleChange}
-                  disabled={formData.branch === "N/A"}
-                >
-                  <option value="">Semester</option>
-                  {Array.from(
-                    { length: settings?.total_semesters },
-                    (_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1} Sem
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
+  {/* SEMESTER SELECT */}
+  <select
+    name="semester"
+    value={formData.semester} // 👈 Keeps UI in sync with state
+    className={`form-select-minimal ${errors.semester ? "is-invalid" : ""}`}
+    onChange={handleChange}
+    disabled={formData.branch === "N/A" }
+  >
+    <option value="">Semester</option>
+    {formData.year &&
+      (() => {
+        const endSem = parseInt(formData.year) * 2;
+        const startSem = endSem - 1;
+
+        return [startSem, endSem].map(
+          (sem) =>
+            sem <= (settings?.total_semesters) && (
+              <option key={sem} value={sem}>
+                {sem} Sem
+              </option>
+            )
+        );
+      })()}
+  </select>
+</div>
 
               {errors.year && (
                 <div className="field-error">{errors.year}</div>

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   FaArrowLeft,
   FaUserEdit,
-  FaUpload,
   FaCloudUploadAlt,
   FaFilePdf,
-  FaUser,
   FaEnvelope,
   FaPhone,
   FaFileAlt,
@@ -15,6 +14,18 @@ import {
 
 } from "react-icons/fa";
 import "../styles/faculty.css";
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function FacultyProfile() {
   const [faculty, setFaculty] = useState({
@@ -36,6 +47,79 @@ export default function FacultyProfile() {
 const user = JSON.parse(localStorage.getItem("user"));
   const [editMode, setEditMode] = useState(false); // ✅ toggle view/edit
 const [departments, setDepartments] = useState([]);
+
+const [activeDate, setActiveDate] = useState(null);
+const [stats, setStats] = useState({ total: 0, categories: {}, timeline: [] });
+
+const generateColorFromString = (str) => {
+  // A curated list of professional, dashboard-ready colors (Tailwind 600 & 700 shades)
+  const palette = [
+    { bg: '#2563eb', border: '#1d4ed8' }, // Blue
+    { bg: '#7c3aed', border: '#6d28d9' }, // Violet
+    { bg: '#059669', border: '#047857' }, // Emerald
+    { bg: '#db2777', border: '#be185d' }, // Pink
+    { bg: '#ea580c', border: '#c2410c' }, // Orange
+    { bg: '#0891b2', border: '#0e7490' }, // Cyan
+    { bg: '#4f46e5', border: '#4338ca' }, // Indigo
+    { bg: '#0284c7', border: '#0369a1' }, // Sky
+  ];
+
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // Use the hash to pick a consistent index from our professional palette
+  const index = Math.abs(hash) % palette.length;
+  return palette[index];
+};
+
+
+// 1. Logic for the Chart (Calculate this inside the component body)
+const categoriesFound = Object.keys(stats.categories || {});
+// Prepare datasets for Stacked Bar Chart with unique colors
+const timelineData = {
+  labels: stats.timeline?.map(t => t.date) || [],
+ datasets: Object.keys(stats.categories || {}).map(cat => {
+  const color = generateColorFromString(cat);
+
+  return {
+    label: cat,
+    data: stats.timeline.map(t => t.details?.[cat] || 0),
+    backgroundColor: color.bg,
+    hoverBackgroundColor: color.border,
+    borderRadius: 4,
+    barThickness: 18
+  };
+})
+
+};
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  onHover: (event, chartElement) => {
+    // Check if the mouse is actually over a bar
+    if (chartElement && chartElement.length > 0) {
+      const index = chartElement[0].index;
+      const dataPoint = stats.timeline[index];
+      // ONLY update state if it's a different date to prevent re-render loops
+      if (activeDate?.date !== dataPoint.date) {
+        setActiveDate(dataPoint);
+      }
+    } else {
+      if (activeDate !== null) setActiveDate(null);
+    }
+  },
+  plugins: {
+    legend: { display: false },
+    tooltip: { mode: 'index', intersect: false }
+  },
+  scales: {
+    x: { stacked: true, grid: { display: false } },
+    y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+  }
+};
 useEffect(() => {
   const token = localStorage.getItem("token");
   const collegeId = localStorage.getItem("college_id");
@@ -192,7 +276,34 @@ const handleDeleteBiodata = async () => {
   }, 600);
 };
 
+useEffect(() => {
+  const fetchStats = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/faculty/uploads/stats",
+        {
+          headers: {
+            Authorization: localStorage.getItem("token")
+          }
+        }
+      );
 
+      const data = await res.json();
+
+      setStats({
+        total: data.total || 0,
+        categories: data.categories || {},
+        timeline: data.timeline || []
+      });
+
+    } catch (err) {
+      console.error("Timeline fetch error", err);
+      setStats({ total: 0, categories: {}, timeline: [] });
+    }
+  };
+
+  fetchStats();
+}, []);
 
 
  return (
@@ -423,7 +534,9 @@ const handleDeleteBiodata = async () => {
               {/* BIO SECTION */}
               <div className="card border-0 shadow-sm rounded-4 p-4">
                 <h6 className="fw-bold text-slate-900 mb-3 d-flex align-items-center gap-2">
-                  <FaFileAlt className="text-primary opacity-50" /> About the Faculty
+                  <div className="p-1 bg-primary-soft rounded text-primary">
+                        <FaFileAlt size={14} />
+                    </div> About the Faculty
                 </h6>
                 <p className="text-slate-600 leading-relaxed mb-0">
                   {faculty.about || "This profile is currently being updated. No biographical information available."}
@@ -433,7 +546,9 @@ const handleDeleteBiodata = async () => {
               {/* ACADEMIC FOCUS */}
               <div className="card border-0 shadow-sm rounded-4 p-4">
                 <h6 className="fw-bold text-slate-900 mb-3 d-flex align-items-center gap-2">
-                  <FaChartBar className="text-primary opacity-50" /> Academic Specialization
+                  <div className="p-1 bg-primary-soft rounded text-primary">
+                        <FaChartBar size={14} />
+                    </div> Academic Specialization
                 </h6>
                 <div className="d-flex flex-wrap gap-2">
                   {faculty.subject ? (
@@ -445,6 +560,75 @@ const handleDeleteBiodata = async () => {
                   )}
                 </div>
               </div>
+              {/* --- RECENT ACTIVITY SECTION --- */}
+<div className="card border-0 shadow-sm rounded-4 overflow-hidden mt-4">
+    <div className="p-4 bg-white border-bottom border-light">
+        <div className="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 className="fw-bold text-slate-900 mb-0 d-flex align-items-center gap-2">
+                    <div className="p-1 bg-primary-soft rounded text-primary">
+                        <FaChartBar size={14} />
+                    </div>
+                    Upload Insights
+                </h6>
+                <p className="text-muted mb-0 x-small">Date-wise category distribution</p>
+            </div>
+            <div className="text-end">
+                <h4 className="fw-bold text-primary mb-0">{stats.total}</h4>
+                <span className="text-uppercase text-slate-400 fw-bold" style={{ fontSize: '10px' }}>Total Files</span>
+            </div>
+        </div>
+    </div>
+
+    <div className="p-4">
+        {/* CHART AREA */}
+        <div style={{ height: '240px', width: '100%' }}>
+            {stats.timeline && stats.timeline.length > 0 ? (
+                <Bar data={timelineData} options={chartOptions} />
+            ) : (
+                <div className="h-100 d-flex flex-column align-items-center justify-content-center bg-slate-50 rounded-4 border border-dashed">
+                    <FaCloudUploadAlt size={30} className="text-slate-300 mb-2" />
+                    <p className="text-slate-500 small">No activity recorded yet.</p>
+                </div>
+            )}
+        </div>
+
+        {/* INTERACTIVE LEGEND AREA */}
+        <div className="mt-4 pt-3 border-top">
+            <h6 className="fw-bold text-slate-800 small mb-3 uppercase ls-1">
+                {activeDate ? `Breakdown for ${activeDate.date}` : "Overall Distribution"}
+            </h6>
+
+            <div className="d-flex flex-wrap gap-3">
+                {Object.keys(stats.categories).map((cat) => {
+                    const count = activeDate 
+                        ? (activeDate.details?.[cat] || 0) 
+                        : (stats.categories[cat] || 0);
+
+                    // Get specific color for this category
+                    const theme = generateColorFromString(cat);
+
+                    return (
+                        <div
+                            key={cat}
+                            className="d-flex align-items-center gap-2 px-3 py-2 rounded-3 border bg-white shadow-sm transition-all"
+                            style={{ 
+                                borderLeft: `4px solid ${theme.bg}`, // Unique category color
+                                opacity: activeDate && count === 0 ? 0.3 : 1,
+                                transform: activeDate && count > 0 ? 'translateY(-3px)' : 'none'
+                            }}
+                        >
+                            <span className="fw-bold" style={{ color: theme.bg }}>{count}</span>
+                            <span className="text-slate-600 small fw-medium">{cat}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    </div>
+</div>
+{/* --- END ACTIVITY SECTION --- */}
+              
             </div>
           )}
         </div>

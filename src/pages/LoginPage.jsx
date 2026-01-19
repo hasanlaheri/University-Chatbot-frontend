@@ -134,7 +134,7 @@ const roleDisplay = {
         <div className="bg-primary rounded-3 p-2 d-flex align-items-center justify-content-center shadow-sm" style={{ width: '38px', height: '38px' }}>
           <span className="text-white fw-bold">U</span>
         </div>
-        <h5 className="fw-bold mb-0 text-slate-900 tracking-tight d-none d-sm-block">University Portal</h5>
+        <h5 className="fw-bold mb-0 text-slate-900 tracking-tight d-none d-sm-block">UniPortal</h5>
       </div>
       <div className="d-flex gap-3 align-items-center">
         <button

@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Dropdown } from "react-bootstrap";
+import "./LandingPage.css"
 
 function LandingPage() {
   const navigate = useNavigate();

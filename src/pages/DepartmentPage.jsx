@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../App.css";
-import LogoutButton from "../components/LogoutButton";
 import {
   FaUniversity,
   FaUsers,

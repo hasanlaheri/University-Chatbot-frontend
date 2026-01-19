@@ -253,19 +253,39 @@ useEffect(() => {
           </div>
 
           <div className="col-md-4">
-            <label className="custom-label">Semester</label>
-            <select className="custom-input form-select shadow-none"
-              name="semester" value={form.semester} onChange={handleChange} disabled={disableYearSem || loading}>
-              {!settings ? <option>...</option> : (
-                <>
-                  <option value="">Sem</option>
-                  {Array.from({ length: settings.total_semesters }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>Sem {i + 1}</option>
-                  ))}
-                </>
-              )}
-            </select>
-          </div>
+  <label className="custom-label">Semester</label>
+  <select 
+    className="custom-input form-select shadow-none"
+    name="semester" 
+    value={form.semester} 
+    onChange={handleChange} 
+    disabled={disableYearSem || loading || !form.year} // Keep disabled if no year is chosen
+  >
+    {!settings ? (
+      <option>...</option>
+    ) : (
+      <>
+        <option value="">Sem</option>
+        {(() => {
+          // 1. Calculate the valid range based on selected year
+          // Year 1 -> 1, 2 | Year 2 -> 3, 4 | Year 3 -> 5, 6...
+          const endSem = form.year * 2;
+          const startSem = endSem - 1;
+
+          // 2. Map only those two semesters
+          return [startSem, endSem].map((sem) => (
+            // Safety check against total_semesters in settings
+            sem <= settings.total_semesters && (
+              <option key={sem} value={sem}>
+                Sem {sem}
+              </option>
+            )
+          ));
+        })()}
+      </>
+    )}
+  </select>
+</div>
 
           {/* File Upload Section */}
           <div className="col-12 mt-4">
