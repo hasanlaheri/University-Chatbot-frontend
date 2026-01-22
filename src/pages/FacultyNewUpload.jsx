@@ -8,6 +8,7 @@ import "../styles/faculty.css";
 export default function FacultyUpload() {
   const [departments, setDepartments] = useState([]);
 const [settings, setSettings] = useState(null);
+const [facultySubject, setFacultySubject] = useState("");
   const navigate = useNavigate();
 const user = JSON.parse(localStorage.getItem("user"));
   const [form, setForm] = useState({
@@ -15,6 +16,7 @@ const user = JSON.parse(localStorage.getItem("user"));
     category: "",
     year: "",
     semester: "",
+    subject: "",
     visibility: "public", 
     file: null
   });
@@ -44,6 +46,7 @@ if (!isUnitDepartment) {
   fd.append("semester", form.semester);
   fd.append("visibility", form.visibility);
   fd.append("file", form.file);
+  fd.append("subject", form.subject);
 
   try {
     const res = await fetch("http://localhost:5000/faculty/upload", {
@@ -150,6 +153,21 @@ useEffect(() => {
     .then(res => res.json())
     .then(data => setSettings(data))
     .catch(err => console.error("Failed to load settings:", err));
+
+    fetch("http://localhost:5000/faculty/profile/get", {
+    headers: { Authorization: localStorage.getItem("token") }
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.subject) {
+        // Split "Math, Physics" into ["Math", "Physics"]
+        const subjectArray = data.subject.split(",").map(s => s.trim()).filter(Boolean);
+        setFacultySubject(subjectArray); // Change state to hold an array
+      } else {
+        setFacultySubject([]);
+      }
+    })
+    .catch(err => console.error("Failed to load faculty profile:", err));
 }, []);
 
   return (
@@ -285,6 +303,43 @@ useEffect(() => {
       </>
     )}
   </select>
+</div>
+{/* SUBJECT DROPDOWN & REFINED NOTE */}
+<div className="col-12 mt-4">
+  <div className="row align-items-center g-3">
+    {/* Left Side: Dropdown */}
+    <div className="col-md-7">
+      <label className="custom-label">Subject (Optional)</label>
+      <select 
+        className="custom-input form-select shadow-none"
+        name="subject" 
+        value={form.subject} 
+        onChange={handleChange} 
+       disabled={disableYearSem || loading}
+      >
+        <option value="">None / Not Applicable</option>
+        {Array.isArray(facultySubject) && facultySubject.map((sub, index) => (
+          <option key={index} value={sub}>
+            {sub}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Right Side: Elegant Note */}
+    <div className="col-md-5 pt-md-4">
+      <div className="ps-3 border-start border-2 border-primary-subtle">
+        <div className="d-flex align-items-center gap-2 mb-1">
+          <span className="text-primary fw-bold" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>
+            GUIDELINE
+          </span>
+        </div>
+        <p className="text-muted mb-0" style={{ fontSize: '11px', lineHeight: '1.4', fontWeight: '450' }}>
+          Select your assigned subject <span className="text-dark fw-medium">only</span> if this material is specifically related.
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
 
           {/* File Upload Section */}

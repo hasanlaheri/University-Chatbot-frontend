@@ -43,6 +43,8 @@ const [settings, setSettings] = useState(null);
 const [draftYear, setDraftYear] = useState("");
 const [draftSem, setDraftSem] = useState("");
 const [draftCategory, setDraftCategory] = useState("");
+const [draftSubject, setDraftSubject] = useState("");
+const [facultySubjects, setFacultySubjects] = useState([]);
 const [draftSearch, setDraftSearch] = useState("");
 const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 const [deletingIds, setDeletingIds] = useState(new Set());
@@ -100,6 +102,29 @@ useEffect(() => {
   loadStats();
 }, []);
 
+useEffect(() => {
+  if (!draftYear || !draftSem) {
+    setFacultySubjects([]);
+    return;
+  }
+
+  fetch(
+    `http://localhost:5000/faculty/uploads/subjects?year=${draftYear}&semester=${draftSem}`,
+    {
+      headers: { Authorization: localStorage.getItem("token") }
+    }
+  )
+    .then(res => res.json())
+    .then(data => {
+      setFacultySubjects(data || []);
+    })
+    .catch(err => {
+      console.error("Failed to load subjects", err);
+      setFacultySubjects([]);
+    });
+
+}, [draftYear, draftSem]);
+
   
 const location = useLocation();
 
@@ -137,6 +162,7 @@ useEffect(() => {
       if (appliedFilters.semester) params.append("semester", appliedFilters.semester);
       if (appliedFilters.category) params.append("category", appliedFilters.category);
       if (appliedFilters.search) params.append("search", appliedFilters.search);
+      if (appliedFilters.subject) params.append("subject", appliedFilters.subject);
 
       const res = await fetch(
         `http://localhost:5000/faculty/uploads?${params.toString()}`,
@@ -641,12 +667,7 @@ async function handleDelete(id) {
         <div className="mb-4">
           <label className="fw-bold text-slate-700 small mb-2 d-block">Academic Year</label>
           <div className="d-flex flex-wrap gap-2">
-            <button 
-              className={`filter-pill ${!draftYear ? 'active' : ''}`}
-              onClick={() => {setDraftYear(""); setDraftSem("");}}
-            >
-              All Years
-            </button>
+            
             {settings && Array.from({ length: settings.total_years }, (_, i) => (
               <button 
                 key={i + 1}
@@ -660,7 +681,7 @@ async function handleDelete(id) {
         </div>
 
        {/* SEMESTER SECTION (Pill Version) */}
-<div className={`mb-4 transition-all ${!draftYear ? 'opacity-25 pointer-events-none' : ''}`}>
+<div className={`mb-4 ${!draftYear ?  'pointer-events-none' : ''}`}>
   <label className="fw-bold text-slate-700 small mb-2 d-block">Semester</label>
   <div className="d-flex gap-2">
     {draftYear ? (
@@ -678,6 +699,30 @@ async function handleDelete(id) {
       <span className="text-muted x-small">Please select a year first</span>
     )}
   </div>
+</div>
+<div className={`mb-4 ${(!draftYear || !draftSem) ? 'pointer-events-none' : ''}`}>
+  <label className="fw-bold text-slate-700 small mb-2 d-block">Filter by Subject</label>
+  <div className="d-flex flex-wrap gap-2">
+    {facultySubjects.length > 0 ? (
+      <>
+       
+        {facultySubjects.map((sub, idx) => (
+          <button 
+            key={idx}
+            className={`filter-pill ${draftSubject === sub ? 'active' : ''}`}
+            onClick={() => setDraftSubject(sub)}
+          >
+            {sub}
+          </button>
+        ))}
+      </>
+    ) : (
+      <span className="text-muted x-small">Select a year and semester to unlock subjects.</span>
+    )}
+  </div>
+  {facultySubjects.length == 0 && (
+    <span className="text-primary x-small mt-1 d-block">No subjects found</span>
+  )}
 </div>
 
         {/* CATEGORY SECTION */}
@@ -722,8 +767,9 @@ async function handleDelete(id) {
               if (draftYear) params.set("year", draftYear);
               if (draftSem) params.set("semester", draftSem);
               if (draftCategory) params.set("category", draftCategory);
+              if (draftSubject) params.set("subject", draftSubject);
               navigate(`?${params.toString()}`);
-              setAppliedFilters({ year: draftYear, semester: draftSem, category: draftCategory });
+              setAppliedFilters({ year: draftYear, semester: draftSem, category: draftCategory, subject: draftSubject });
               setShowFilter(false);
             }}
           >

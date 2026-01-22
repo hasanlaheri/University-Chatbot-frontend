@@ -16,13 +16,17 @@ export default function UserChat() {
 const [department_id, setDepartmentId] = useState("");
 const [year, setYear] = useState("");
 const [semester, setSemester] = useState("");
+const [subject, setSubject] = useState("");
+const [availableSubjects, setAvailableSubjects] = useState([]);
+
 const [originalTitle, setOriginalTitle] = useState("");
 const menuRef = React.useRef(null);
 const [filter, setFilter] = useState({
   mode: "",
   department_id: "",
   year: "",
-  semester: ""
+  semester: "",
+  subject: "" 
 });
 
 useEffect(() => {
@@ -286,6 +290,35 @@ useEffect(() => {
   fetchSettingsIfNeeded(); // 👈 ensures Year & Semester load in profile form
 }, [showProfile]);
 
+useEffect(() => {
+  if (mode === "Academic" && department_id && year && semester) {
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/chat/uploads/subjects?department_id=${department_id}&year=${year}&semester=${semester}`,
+          {
+            headers: {
+              Authorization: localStorage.getItem("token"),
+            },
+          }
+        );
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        setAvailableSubjects(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch subjects", err);
+      }
+    };
+
+    fetchSubjects();
+  } else {
+    setAvailableSubjects([]);
+    setSubject(""); // 🔥 reset when dependencies clear
+  }
+}, [mode, department_id, year, semester]);
+
 
 useEffect(() => {
   if (!collegeId) return;
@@ -395,7 +428,8 @@ const handleApply = () => {
   mode,
   department_id,
   year,
-  semester
+  semester,
+   subject 
 });
 
 };
@@ -473,6 +507,7 @@ async function sendMessage() {
         department_id: department_id || null,
         year,
         semester,
+        subject: subject || null 
       }),
     });
 
@@ -689,6 +724,9 @@ useEffect(() => {
   setYear={setYear}
   semester={semester}
   setSemester={setSemester}
+   subject={subject}
+  setSubject={setSubject}
+  availableSubjects={availableSubjects}
   isAcademicMode={isAcademicMode}
   departments={departments}
   settings={settings}

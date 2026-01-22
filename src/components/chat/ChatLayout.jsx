@@ -27,6 +27,9 @@ export default function ChatLayout({
   setYear,
   semester,
   setSemester,
+  subject,
+  setSubject,
+  availableSubjects,
   isAcademicMode,
   departments,
   settings,
@@ -120,7 +123,7 @@ export default function ChatLayout({
                   {d.name}
                 </option>
               ))}
-              <option value="all">All Departments</option>
+              {/* <option value="all">All Departments</option> */}
             </select>
           </div>
         )}
@@ -166,6 +169,24 @@ export default function ChatLayout({
                   )}
               </select>
             </div>
+            {/* NEW: SUBJECT SELECT */}
+      <div className={`filter-group ${!year || !semester ? 'opacity-50' : 'animate-fade-in'}`}>
+        <select
+          className="form-select border-0 bg-transparent py-1 shadow-none"
+          style={{ fontSize: "0.85rem", minWidth: "120px" }}
+          value={subject || ""}
+          disabled={!year || !semester}
+          onChange={e => setSubject(e.target.value)}
+        >
+          <option value="">{!year || !semester ? "Select Sem first" : "All Subjects"}</option>
+          {availableSubjects && availableSubjects.map((sub, idx) => (
+            <option key={idx} value={sub}>
+              {sub}
+            </option>
+          ))}
+        </select>
+      </div>
+    
           </div>
         )}
 
@@ -249,18 +270,25 @@ export default function ChatLayout({
             ))
           )}
 
-          {currentSessionId &&
-            typingSessionId === currentSessionId && (
-              <div className="d-flex mb-4">
-                <div className="ai-bubble shadow-sm py-3 px-4">
-                  <div className="typing-dots">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </div>
-              </div>
-            )}
+        {currentSessionId && typingSessionId === currentSessionId && (
+  <div className="d-flex mb-4 animate-fade-in">
+    <div className="typing-container shadow-sm">
+      {/* Small Academic Icon to give it "Personality" */}
+      <FaGraduationCap className="academic-icon" size={18} />
+      
+      <div className="d-flex flex-column">
+        <span className="text-primary fw-bold mb-1" style={{ fontSize: '10px', letterSpacing: '1px' }}>
+          THINKING...
+        </span>
+        <div className="typing-dots">
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
           <div ref={messagesEndRef} />
         </div>
