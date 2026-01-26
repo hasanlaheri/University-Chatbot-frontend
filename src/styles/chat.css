@@ -144,8 +144,9 @@
   padding: 2px 12px;
   transition: 0.2s;
 }
+
 .filter-group:hover { 
-    border-color: #06306e;
+    border-color: #1669e5;
     background: #fff;
      }
 
@@ -161,16 +162,37 @@
   font-size: 0.95rem;
   line-height: 1.6;
 }
-.user-bubble {
-  background-color: #0d6efd;
-  color: white;
-  border-radius: 20px 20px 4px 20px;
+/* AI Message: No background, just clean text */
+.ai-message-minimal {
+  background-color: transparent; /* Remove background */
+  color: #1a1f23;               /* Deep professional slate/black */
+  padding: 8px 0;               /* Spacing on top/bottom only */
+  width: 100%;                  /* Allow text to breathe */
+  line-height: 1.6;             /* Improve readability */
+  font-size: 0.95rem;
+  border: none;                 /* Remove all borders */
 }
-.ai-bubble {
-  background-color: white;
-  color: #212529;
-  border-radius: 20px 20px 20px 4px;
-  border: 1px solid rgba(0,0,0,0.05);
+
+/* Optional: Make Markdown elements look sharp */
+.ai-message-minimal p {
+  margin-bottom: 1rem;
+}
+
+.ai-message-minimal code {
+  background: #f1f5f9;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Keep the User Bubble distinct so they don't blend */
+.user-bubble {
+  background-color: #2563eb;;    /* Dark navy */
+  color: white;
+  border-radius: 18px;
+  padding: 10px 16px;
+  max-width: 80%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .action-btn-mini {
@@ -183,53 +205,27 @@
   color: #0d6efd;
 }
 
-/* Academic Typing Indicator */
-.typing-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(13, 110, 253, 0.03); /* Very light university blue */
-  border-radius: 16px 16px 16px 4px;
-  padding: 12px 20px;
-  border: 1px solid rgba(13, 110, 253, 0.1);
-}
-
-.academic-icon {
-  color: #0d6efd;
-  animation: pulse-scale 2s infinite ease-in-out;
-}
-
-.typing-dots {
+.minimal-typing-dots {
   display: flex;
   gap: 4px;
+  align-items: center;
 }
 
-.typing-dots span {
-  width: 6px;
-  height: 6px;
-  background: #0d6efd; /* University Primary Blue */
+.minimal-typing-dots span {
+  width: 4px;
+  height: 4px;
+  background-color: #0d6efd; /* Match your primary blue */
   border-radius: 50%;
-  opacity: 0.4;
-  animation: academic-wave 1.4s infinite ease-in-out both;
+  display: inline-block;
+  animation: minimal-pulse 1.4s infinite ease-in-out both;
 }
 
-.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+.minimal-typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.minimal-typing-dots span:nth-child(2) { animation-delay: -0.16s; }
 
-@keyframes academic-wave {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40% { transform: translateY(-6px); opacity: 1; box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3); }
-}
-
-@keyframes pulse-scale {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.8; }
-}
-
-@keyframes bounce {
-  0%,80%,100% { transform: scale(0); }
-  40% { transform: scale(1); }
+@keyframes minimal-pulse {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
 }
 
 /* Input Area */
@@ -248,6 +244,7 @@
   background: transparent !important;
   box-shadow: none !important;
 }
+
 .send-btn-pro {
   background: #0d6efd;
   color: white;
@@ -271,25 +268,6 @@
   background: #333;
   border-radius: 10px;
 }
-.typing-indicator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 6px 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-/* .typing-indicator span:nth-child(1) {
-  animation-delay: 0s;
-}
-.typing-indicator span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.typing-indicator span:nth-child(3) {
-  animation-delay: 0.4s;
-} */
 
 /* ===============================
    MOBILE OPTIMIZATIONS

@@ -18,19 +18,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Shake animation for unauthorized access */
-.shake-error {
-  animation: shake 0.4s ease-in-out;
-}
-
-@keyframes shake {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(-5px); }
-  40% { transform: translateX(5px); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(5px); }
-  100% { transform: translateX(0); }
-}
 
 /* Pop-up error box */
 .unauthorized-popup {
@@ -60,10 +47,6 @@ button:disabled {
 @keyframes popIn {
   0% { transform: scale(0.7); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
-}
-
-.shake {
-  animation: shakeAnim 0.3s;
 }
 
 @keyframes shakeAnim {
@@ -533,6 +516,35 @@ body {
   color: #DC2626;
   margin-top: 4px;
   font-weight: 500;
+}
+/* Individual Box Focus */
+.otp-card input:focus {
+  background-color: #ffffff !important;
+  border-color: #2d6bf1 !important;
+  box-shadow: 0 0 0 4px rgba(45, 107, 241, 0.1) !important;
+  outline: none;
+  transform: translateY(-2px);
+}
+
+/* Error Shaking Animation */
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+}
+
+/* Entry Animation */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Custom Spiral Animation */

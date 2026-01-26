@@ -26,13 +26,41 @@ function RegisterPage() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [colleges, setColleges] = useState([]);
 const [loadingColleges, setLoadingColleges] = useState(true);
-const [emailStatus, setEmailStatus] = useState(null); // "student" | "guest" | null
+const [emailStatus, setEmailStatus] = useState(null); 
 const [departments, setDepartments] = useState([]);
 const [settings, setSettings] = useState(null);
-const [allDepartments, setAllDepartments] = useState([]);        // faculty
-const [academicDepartments, setAcademicDepartments] = useState([]); // students
+const [allDepartments, setAllDepartments] = useState([]);        
+const [academicDepartments, setAcademicDepartments] = useState([]); 
 const [showPassword, setShowPassword] = useState(false);
+// 🔐 Email verification states
+const [emailVerified, setEmailVerified] = useState(false);
+const [otpStage, setOtpStage] = useState(false);
+const [verifyingEmail, setVerifyingEmail] = useState(false);
+const [otp, setOtp] = useState("");
+const [otpError, setOtpError] = useState("");
+const [verifying, setVerifying] = useState(false);
 
+const otpRefs = React.useRef([]);
+
+const handleOtpChange = (value, index) => {
+  if (isNaN(value)) return;
+  const newOtp = otp.split("");
+  newOtp[index] = value.substring(value.length - 1);
+  const combinedOtp = newOtp.join("");
+  setOtp(combinedOtp);
+
+  // Move focus forward
+  if (value && index < 5) {
+    otpRefs.current[index + 1].focus();
+  }
+};
+
+const handleKeyDown = (e, index) => {
+  // Move focus back on backspace
+  if (e.key === "Backspace" && !otp[index] && index > 0) {
+    otpRefs.current[index - 1].focus();
+  }
+};
 
 
   // ✅ Field-level validation on change
@@ -70,6 +98,9 @@ const [showPassword, setShowPassword] = useState(false);
         if (!value.trim()) errorMsg = "Username is required";
         break;
       case "email":
+        setEmailVerified(false);
+  setOtpStage(false);
+  setVerifyingEmail(false);
   if (!/^\S+@\S+\.\S+$/.test(value)) {
     errorMsg = "Enter a valid email address";
     setEmailStatus(null);
@@ -139,6 +170,128 @@ const [showPassword, setShowPassword] = useState(false);
   }
 
   return newErrors;
+};
+
+const handleVerifyEmail = async () => {
+  if (!formData.email || errors.email || !formData.college_id) return;
+
+  setVerifyingEmail(true);
+  setErrors(prev => ({ ...prev, email: "" }));
+
+  try {
+    const res = await fetch("http://127.0.0.1:5000/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: formData.email,
+        username: formData.username,
+        role,
+        college_id: formData.college_id
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      // 🚫 Faculty not authorized
+      if (res.status === 401 && role === "faculty") {
+        setUnauthorized(true);
+        setTimeout(() => navigate("/"), 2500);
+        return;
+      }
+
+      // Other errors
+      setErrors(prev => ({
+        ...prev,
+        email: data.error || "Failed to send OTP"
+      }));
+      return;
+    }
+
+    // ✅ OTP sent
+    setOtpStage(true);
+    setOtp("");
+    setOtpError("");
+
+  } catch (err) {
+    setErrors(prev => ({
+      ...prev,
+      email: "Server error while sending OTP"
+    }));
+  } finally {
+    setVerifyingEmail(false);
+  }
+};
+
+
+
+const handleVerifyOtp = async () => {
+  if (!otp || otp.length !== 6) {
+    setOtpError("Enter a valid 6-digit OTP");
+    return;
+  }
+  setVerifying(true);
+
+  setOtpError("");
+
+  try {
+    const res = await fetch("http://127.0.0.1:5000/auth/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: formData.email,
+        otp
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setOtpError(data.error || "Invalid OTP");
+      return;
+    }
+
+    // ✅ OTP verified
+    setEmailVerified(true);
+    setOtpStage(false);
+    setOtp("");
+    setOtpError("");
+
+  } catch (err) {
+    setOtpError("Server error while verifying OTP");
+  }finally {
+    setVerifying(false); 
+  }
+};
+
+const [timer, setTimer] = useState(300); // 300 seconds = 5 minutes
+const [canResend, setCanResend] = useState(false);
+
+useEffect(() => {
+  let interval = null;
+  if (otpStage && timer > 0) {
+    interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+  } else if (timer === 0) {
+    setCanResend(true);
+    clearInterval(interval);
+  }
+  return () => clearInterval(interval);
+}, [otpStage, timer]);
+
+// Helper to format seconds into MM:SS
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+};
+
+// Reset timer logic (call this when "Resend" is clicked)
+const handleResend = () => {
+  setTimer(300);
+  setCanResend(false);
+  // Trigger your API resend logic here
 };
 
 
@@ -408,72 +561,188 @@ return (
           </div>
 
           {/* EMAIL + CONTACT */}
-          <div className="row g-3 mb-3">
-            <div className="col-md-6">
-              <input
-                type="email"
-                name="email"
-                className={`form-control-minimal ${
-                  errors.email ? "is-invalid" : ""
-                }`}
-                placeholder="Email Address"
-                onChange={handleChange}
-              />
+          {/* EMAIL FIELD WITH INTEGRATED VERIFY BUTTON */}
+<div className="mb-3">
+  <div className="position-relative d-flex align-items-center">
+    <input
+  type="email"
+  name="email"
+  readOnly={emailVerified}
+  className={`form-control-minimal w-100 ${errors.email ? "is-invalid" : ""}`}
+  placeholder="Email Address"
+  style={{ paddingRight: "80px" }}
+  onChange={handleChange}
+/>
 
-              {emailStatus && role === "user" && (
-  <div 
-    className={`d-flex align-items-center gap-2 mt-2 p-2 rounded-3 animate-slide-down ${
-      emailStatus === "student" ? "status-student" : "status-guest"
-    }`}
-    style={{ fontSize: '0.75rem', border: '1px solid transparent' }}
-  >
-    <div className="status-icon">
-      {emailStatus === "student" ? (
-        <FaCheckCircle size={14} />
-      ) : (
-        <FaExclamationTriangle size={14} />
-      )}
+   <button
+  className="btn position-absolute end-0 me-2"
+  type="button"
+  disabled={
+    emailVerified ||
+    verifyingEmail ||
+    !formData.email ||
+    !!errors.email ||
+    !formData.college_id
+  }
+  onClick={handleVerifyEmail}
+  style={{
+    fontSize: "0.75rem",
+    fontWeight: "700",
+    color: emailVerified ? "#16a34a" : "#2d6bf1",
+    backgroundColor: emailVerified ? "#dcfce7" : "#eef2ff",
+    borderRadius: "8px",
+    padding: "4px 12px",
+    border: "none",
+    cursor: emailVerified ? "default" : "pointer"
+  }}
+>
+  {verifyingEmail
+    ? "Sending..."
+    : emailVerified
+    ? "Verified ✓"
+    : "Verify"}
+</button>
+
+  </div>
+
+  {/* Status Indicator */}
+  {emailStatus && role === "user" && (
+    <div 
+      className={`d-flex align-items-center gap-2 mt-2 p-2 rounded-3 animate-slide-down ${
+        emailStatus === "student" ? "status-student" : "status-guest"
+      }`}
+      style={{ fontSize: '0.75rem' }}
+    >
+      <div className="status-icon">
+        {emailStatus === "student" ? <FaCheckCircle size={14} /> : <FaExclamationTriangle size={14} />}
+      </div>
+      <div className="flex-grow-1">
+        <span className="fw-bold d-block">
+          {emailStatus === "student" ? "Student Account" : "Guest Account"}
+        </span>
+      </div>
     </div>
+  )}
+  {errors.email && <div className="field-error">{errors.email}</div>}
+</div>
+{otpStage && !emailVerified && (
+  <div className="mb-5"> 
+  <div className="otp-card mt-5 p-4 animate-fade-in mx-auto" 
+       style={{ 
+         background: "#ffffff", 
+         borderRadius: "20px",
+         border: "1px solid #e2e8f0",
+         boxShadow: "0 15px 35px -5px rgba(0, 0, 0, 0.05)",
+         maxWidth: "400px" // Limits the width so it doesn't stretch too far
+       }}>
     
-    <div className="flex-grow-1">
-      <span className="fw-bold d-block" style={{ lineHeight: '1' }}>
-        {emailStatus === "student" ? "Student Account" : "Guest Account"}
-      </span>
-      <span className="opacity-75">
-        {emailStatus === "student" 
-          ? "Domain verified for full campus access" 
-          : "Limited access due to domain mismatch"}
-      </span>
+    <div className="text-center mb-4">
+      <div className="d-inline-flex align-items-center justify-content-center mb-3" 
+           style={{ width: "42px", height: "42px", backgroundColor: "#f1f5f9", borderRadius: "10px", color: "#64748b" }}>
+        <FaShieldAlt size={18} />
+      </div>
+      <h6 className="fw-bold text-dark mb-1" style={{ fontSize: "0.95rem" }}>Check your inbox</h6>
+      <p className="text-muted" style={{ fontSize: "0.75rem" }}>We sent a 6-digit code to your email</p>
+      <p className="text-muted" style={{ fontSize: "0.75rem" }}>Code expires in <span className="fw-bold text-primary">{formatTime(timer)}</span></p>
     </div>
+
+    {/* DIGIT BOXES - Slightly Smaller */}
+    <div className="d-flex justify-content-center gap-2 mb-4">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <input
+          key={index}
+          ref={(el) => (otpRefs.current[index] = el)}
+          type="text"
+          maxLength={1}
+          value={otp[index] || ""}
+          onChange={(e) => handleOtpChange(e.target.value, index)}
+          onKeyDown={(e) => handleKeyDown(e, index)}
+          className="form-control text-center p-0"
+          style={{
+            width: "40px",
+            height: "48px",
+            fontSize: "1.2rem",
+            fontWeight: "700",
+            borderRadius: "10px",
+            backgroundColor: "#fcfdfe",
+            border: otpError ? "1px solid #fee2e2" : "1px solid #cbd5e1",
+            transition: "all 0.2s ease"
+          }}
+        />
+      ))}
+    </div>
+
+    {otpError && (
+      <div className="text-danger text-center mb-3 animate-shake" style={{ fontSize: "0.75rem" }}>
+        <FaExclamationTriangle className="me-1" /> {otpError}
+      </div>
+    )}
+
+    <div className="d-grid gap-2">
+      <button
+  type="button"
+  className="btn btn-dark py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
+  disabled={verifying || timer === 0}
+  style={{ 
+    borderRadius: "10px", 
+    backgroundColor: (verifying || timer === 0) ? "#64748b" : "#0f172a",
+    fontSize: "0.85rem",
+    letterSpacing: "0.3px",
+    border: "none",
+    transition: "all 0.3s ease"
+  }}
+  onClick={handleVerifyOtp}
+>
+  {verifying ? (
+    <>
+      <span 
+        className="spinner-border spinner-border-sm" 
+        role="status" 
+        aria-hidden="true"
+        style={{ width: "1rem", height: "1rem", borderWidth: "0.15em" }}
+      ></span>
+      <span>Checking...</span>
+    </>
+  ) : (
+    "Verify Code"
+  )}
+</button>
+      
+      <div className="text-center">
+        <button 
+          type="button" 
+          className="btn btn-link mt-2 text-muted text-decoration-none p-0 fw-medium"
+          style={{ fontSize: "0.7rem" }}
+        >
+          Resend code 
+        </button>
+      </div>
+    </div>
+  </div>
   </div>
 )}
 
-              {errors.email && (
-                <div className="field-error">{errors.email}</div>
-              )}
-            </div>
 
-            <div className="col-md-6">
-              <input
-                type="tel"
-                name="contact"
-                className={`form-control-minimal ${
-                  errors.contact ? "is-invalid" : ""
-                }`}
-                placeholder="Contact Number"
-                onChange={handleChange}
-              />
-              {errors.contact && (
-                <div className="field-error">{errors.contact}</div>
-              )}
-            </div>
-          </div>
 
+{/* CONTACT FIELD */}
+<div className="mb-4">
+  <input
+  type="tel"
+  name="contact"
+  disabled={!emailVerified}
+  className={`form-control-minimal ${errors.contact ? "is-invalid" : ""}`}
+  placeholder="Contact Number"
+  onChange={handleChange}
+/>
+
+  {errors.contact && <div className="field-error">{errors.contact}</div>}
+</div>
           {/* FACULTY / STUDENT FIELDS */}
           {role === "faculty" ? (
             <div className="mb-3">
               <select
                 name="department"
+                disabled={!emailVerified} 
                 className={`form-select-minimal ${
                   errors.department ? "is-invalid" : ""
                 }`}
@@ -495,6 +764,7 @@ return (
               <div className="mb-3">
                 <select
                   name="branch"
+                  disabled={!emailVerified} 
                   className={`form-select-minimal ${
                     errors.branch ? "is-invalid" : ""
                   }`}
@@ -520,7 +790,7 @@ return (
     value={formData.year} // 👈 Added this to ensure it clears visually
     className={`form-select-minimal ${errors.year ? "is-invalid" : ""}`}
     onChange={handleChange}
-    disabled={formData.branch === "N/A"}
+    disabled={formData.branch === "N/A" || !emailVerified}
   >
     <option value="">Year</option>
     {Array.from({ length: settings?.total_years || 0 }, (_, i) => (
@@ -536,7 +806,7 @@ return (
     value={formData.semester} // 👈 Keeps UI in sync with state
     className={`form-select-minimal ${errors.semester ? "is-invalid" : ""}`}
     onChange={handleChange}
-    disabled={formData.branch === "N/A" }
+    disabled={formData.branch === "N/A" || !emailVerified}
   >
     <option value="">Semester</option>
     {formData.year &&
@@ -568,14 +838,14 @@ return (
           {/* PASSWORD */}
           <div className="mb-4 position-relative">
             <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              className={`form-control-minimal ${
-                errors.password ? "is-invalid" : ""
-              }`}
-              placeholder="Set Password"
-              onChange={handleChange}
-            />
+  type={showPassword ? "text" : "password"}
+  name="password"
+  disabled={!emailVerified}
+  className={`form-control-minimal ${errors.password ? "is-invalid" : ""}`}
+  placeholder="Set Password"
+  onChange={handleChange}
+/>
+
             <div className="position-absolute end-0 top-50 translate-middle-y">
               <PasswordEye
                 visible={showPassword}
@@ -600,7 +870,7 @@ return (
               color: "white",
               fontSize: "1rem",
             }}
-            disabled={success}
+            disabled={!emailVerified || success}
           >
             {success ? "Setting up..." : "Join Now →"}
           </button>

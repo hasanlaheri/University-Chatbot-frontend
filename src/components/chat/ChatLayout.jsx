@@ -6,7 +6,10 @@ import {
   FaCheck,
   FaStop,
   FaVolumeUp,
-  FaPaperPlane
+  FaPaperPlane,
+  FaChevronUp,
+  FaChevronDown
+
 } from "react-icons/fa";
 import { MdContentCopy } from "react-icons/md";
 
@@ -17,6 +20,8 @@ export default function ChatLayout({
   /* header */
   collegeName,
   isFilterIncomplete,
+  showFilterShelf,
+  setShowFilterShelf,
 
   /* filters */
   mode,
@@ -85,10 +90,66 @@ export default function ChatLayout({
             </small>
           </div>
         </div>
+   {/* TOGGLE BUTTON (Shifted to Right Side) */}
+<button
+  className="btn d-flex align-items-center gap-3 shadow-sm ms-auto"
+  onClick={() => setShowFilterShelf(!showFilterShelf)}
+  style={{
+    backgroundColor: "#ffffff",
+    border: "1px solid",
+    borderColor: showFilterShelf ? "#1e293b" : "#e2e8f0",
+    borderRadius: "12px",
+    padding: "10px 18px",
+    color: "#475569",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    minWidth: "160px", // Maintains consistent width during state change
+    justifyContent: "space-between"
+  }}
+>
+  <div className="d-flex align-items-center gap-2">
+    <FaFilter 
+      size={12} 
+      className={showFilterShelf ? "text-info" : "text-muted"} 
+      style={{ transition: "0.3s" }}
+    />
+    <span
+      className="fw-bold"
+      style={{ 
+        fontSize: "0.75rem", 
+        letterSpacing: "0.8px", 
+        textTransform: "uppercase" 
+      }}
+    >
+      Filters
+    </span>
+  </div>
+
+  <div className="d-flex align-items-center gap-2">
+    {/* Notification Dot for Incomplete Filters */}
+    {isFilterIncomplete && !showFilterShelf && (
+      <span className="position-relative d-flex" style={{ width: "8px", height: "8px" }}>
+        <span className="animate-ping position-absolute inline-flex h-100 w-100 rounded-full bg-warning opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
+      </span>
+    )}
+
+    {/* Directional Arrow */}
+    {showFilterShelf ? (
+      <FaChevronUp size={10} className="opacity-75 animate-fade-in" />
+    ) : (
+      <FaChevronDown size={10} className="opacity-75 animate-fade-in" />
+    )}
+  </div>
+</button>
+  
       </header>
 
+      
+
       {/* ================= FILTER BAR ================= */}
+      {showFilterShelf && (
       <div className="filter-shelf bg-white border-bottom px-4 py-2 d-flex align-items-center gap-2 flex-wrap">
+        
         <div className="filter-group">
           <FaFilter className="filter-icon" />
           <select
@@ -189,18 +250,47 @@ export default function ChatLayout({
     
           </div>
         )}
+        
+{/* ACTIONS GROUP */}
+    <div className="ms-auto d-flex align-items-center gap-2">
+      
+      {/* CLEAR FILTERS BUTTON */}
+      <button
+        className="btn btn-sm text-muted hover-text-danger d-flex align-items-center gap-1 border-0 bg-transparent px-3"
+        style={{ fontSize: "0.8rem", fontWeight: "600" }}
+        onClick={() => {
+          setMode("");
+          setDepartmentId("");
+          setYear("");
+          setSemester("");
+          setSubject("");
+          handleApply(true);
+          // If you have a specific clear function passed as a prop, call it here
+        }}
+      >
+        <svg size={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '12px' }}>
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+        Reset
+      </button>
 
-        <button
-          className={`btn btn-sm rounded-pill px-4 ms-auto ${
-            isFilterIncomplete
-              ? "btn-outline-primary"
-              : "btn-primary shadow-sm"
-          }`}
-          onClick={handleApply}
-        >
-          Apply Filters
-        </button>
-      </div>
+      {/* APPLY FILTERS BUTTON */}
+      <button
+        className={`btn btn-sm rounded-pill px-4 ${
+          isFilterIncomplete
+            ? "btn-outline-primary"
+            : "btn-primary shadow-sm"
+        }`}
+        style={{ fontWeight: "600" }}
+        onClick={handleApply}
+      >
+        Apply 
+      </button>
+
+    </div>
+  </div>
+)}
 
       {/* ================= MESSAGES ================= */}
       <div className="flex-grow-1 overflow-auto px-3 px-md-5 py-4 custom-chat-scrollbar">
@@ -224,18 +314,18 @@ export default function ChatLayout({
                 }`}
               >
                 <div
-                  className={`message-bubble-pro ${
-                    m.role === "user"
-                      ? "user-bubble"
-                      : "ai-bubble shadow-sm"
-                  }`}
-                >
+    className={
+      m.role === "user"
+        ? "message-bubble-pro user-bubble" // Keep user bubble for contrast
+        : "ai-message-minimal"            // New minimal style for AI
+    }
+  >
                   <div className="bubble-content">
                     <ReactMarkdown>{m.content}</ReactMarkdown>
                   </div>
 
                   {m.role === "assistant" && m.final && (
-                    <div className="bubble-actions d-flex gap-2 mt-2 pt-2 border-top border-opacity-10">
+                    <div className="bubble-actions d-flex gap-3 mt-1 justify-content-start">
                       <button
                         className="action-btn-mini"
                         onClick={() => copyToClipboard(m.content, i)}
@@ -270,17 +360,25 @@ export default function ChatLayout({
             ))
           )}
 
-        {currentSessionId && typingSessionId === currentSessionId && (
-  <div className="d-flex mb-4 animate-fade-in">
-    <div className="typing-container shadow-sm">
-      {/* Small Academic Icon to give it "Personality" */}
-      <FaGraduationCap className="academic-icon" size={18} />
-      
-      <div className="d-flex flex-column">
-        <span className="text-primary fw-bold mb-1" style={{ fontSize: '10px', letterSpacing: '1px' }}>
-          THINKING...
+{currentSessionId && typingSessionId === currentSessionId && (
+  <div className="d-flex mb-4 animate-fade-in align-items-center gap-3">
+    {/* Minimalist Icon - no container */}
+    <FaGraduationCap className="text-primary opacity-50" size={20} />
+    
+    <div className="d-flex flex-column justify-content-center">
+      <div className="d-flex align-items-center gap-2">
+        <span 
+          className="fw-bold text-muted" 
+          style={{ 
+            fontSize: '11px', 
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase'
+          }}
+        >
+          Thinking
         </span>
-        <div className="typing-dots">
+        {/* Sleek inline dots */}
+        <div className="minimal-typing-dots">
           <span />
           <span />
           <span />
@@ -295,8 +393,26 @@ export default function ChatLayout({
       </div>
 
       {/* ================= INPUT ================= */}
-      <div className="p-3 p-md-4">
-        <div className="max-width-container mx-auto" style={{ maxWidth: 850 }}>
+     <div
+  className="p-3 p-md-4"
+  style={{
+    backgroundColor: "transparent",
+    position: "relative",
+    height: "120px"
+  }}
+>
+  <div
+    className="max-width-container mx-auto"
+    style={{
+      maxWidth: 850,
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      margin: "auto",
+      zIndex: 10
+    }}
+  >
           <div
             className={`input-container-pro shadow-sm ${
               isFilterIncomplete ? "disabled-ui" : ""

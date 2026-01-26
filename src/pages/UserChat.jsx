@@ -18,7 +18,7 @@ const [year, setYear] = useState("");
 const [semester, setSemester] = useState("");
 const [subject, setSubject] = useState("");
 const [availableSubjects, setAvailableSubjects] = useState([]);
-
+const [showFilterShelf, setShowFilterShelf] = useState(true);
 const [originalTitle, setOriginalTitle] = useState("");
 const menuRef = React.useRef(null);
 const [filter, setFilter] = useState({
@@ -715,6 +715,8 @@ useEffect(() => {
 
   collegeName={collegeName}
   isFilterIncomplete={isFilterIncomplete}
+  showFilterShelf = {showFilterShelf}
+  setShowFilterShelf = {setShowFilterShelf}
 
   mode={mode}
   setMode={setMode}
