@@ -21,6 +21,31 @@ const [availableSubjects, setAvailableSubjects] = useState([]);
 const [showFilterShelf, setShowFilterShelf] = useState(true);
 const [originalTitle, setOriginalTitle] = useState("");
 const menuRef = React.useRef(null);
+// 🔐 Email re-verification states
+const [originalEmail, setOriginalEmail] = useState("");
+const [emailOtpStage, setEmailOtpStage] = useState(false);
+const [emailOtp, setEmailOtp] = useState("");
+const [emailOtpError, setEmailOtpError] = useState("");
+const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
+const [profileError, setProfileError] = useState("");
+const [sendOtpError, setSendOtpError] = useState("");
+
+// Add this state to track visibility
+const [showScrollBtn, setShowScrollBtn] = React.useState(false);
+
+// Add this handler to detect scroll position
+const handleScroll = (e) => {
+  const { scrollTop, scrollHeight, clientHeight } = e.target;
+  // If user is more than 300px away from bottom, show button
+  const isFarFromBottom = scrollHeight - scrollTop - clientHeight > 300;
+  setShowScrollBtn(isFarFromBottom);
+};
+
+const scrollToBottom = () => {
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+};
+
+
 const [filter, setFilter] = useState({
   mode: "",
   department_id: "",
@@ -247,6 +272,13 @@ const closeProfile = () => {
   setConfirmAccountDelete(false);
   setDeletingAccount(false);
 
+  // 🔐 RESET PROFILE / OTP ERRORS
+  setProfileError("");
+  setSendOtpError("");
+  setEmailOtpError("");
+  setEmailOtp("");
+  setEmailOtpStage(false);
+
   // optional: clear password fields
   setPasswordForm({
     currentPassword: "",
@@ -254,6 +286,7 @@ const closeProfile = () => {
     confirmPassword: ""
   });
 };
+
 const [passwordError, setPasswordError] = useState("");
 
 
@@ -566,6 +599,29 @@ const adjustTextareaHeight = (el) => {
 };
 
 const handleSaveProfile = async () => {
+  // 🔍 Detect email change
+  if (profileForm.email !== originalEmail) {
+    await sendEmailChangeOtp();
+    return;
+  }
+
+  // ✅ Email unchanged
+  await submitProfileUpdate();
+};
+
+const handleProfileChange = (field, value) => {
+  setProfileError("");
+  setSendOtpError("");
+  setEmailOtpError("");
+
+  setProfileForm(prev => ({
+    ...prev,
+    [field]: value
+  }));
+};
+
+
+const submitProfileUpdate = async () => {
   try {
     const res = await fetch("http://localhost:5000/user/update-profile", {
       method: "POST",
@@ -576,35 +632,125 @@ const handleSaveProfile = async () => {
       body: JSON.stringify(profileForm),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const err = await res.json();
-      alert(err.error || "Failed to update profile");
+      setProfileError(data.error || "Failed to update profile");
       return;
     }
 
-    const data = await res.json();
+    // 🔥 EMAIL CHANGED → FORCE LOGOUT
+    if (data.email_changed) {
+      localStorage.clear();
 
-    // 🔄 update localStorage user
+      alert(
+        "Your email was changed successfully. Please log in again using your new email."
+      );
+
+      window.location.href = "/";
+      return;
+    }
+
+    // ✅ Normal update (email unchanged)
     localStorage.setItem("user", JSON.stringify(data.user));
-
+    setProfileError("");
     setEditProfile(false);
+    setEmailOtpStage(false);
+
   } catch (err) {
     console.error("Update profile error:", err);
+    setProfileError("Server error. Please try again later.");
   }
 };
+
+
+
 // 🔹 OPEN EDIT PROFILE HANDLER
 const openEditProfile = async () => {
   await fetchSettingsIfNeeded();
 
- setProfileForm(prev => ({
-  ...prev, // 👈 KEEP initialized values
-  username: user?.username || "",
-  email: user?.email || ""
-}));
+  setProfileForm(prev => ({
+    ...prev,
+    username: user?.username || "",
+    email: user?.email || ""
+  }));
 
+  // ✅ RESET EVERYTHING RELATED TO EMAIL CHANGE
+  setOriginalEmail(user?.email || "");
+  setEmailOtpStage(false);
+  setEmailOtp("");
+  setEmailOtpError("");
+  setSendOtpError("");
+  setProfileError("");
 
   setEditProfile(true);
 };
+
+
+
+const sendEmailChangeOtp = async () => {
+  setSendingEmailOtp(true);
+  setEmailOtpError("");
+
+  try {
+    const res = await fetch("http://localhost:5000/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: profileForm.email,
+        username: profileForm.username,
+        role: user.role,
+        college_id: user.college_id
+      })
+    });
+
+    const data = await res.json();
+
+     if (!res.ok) {
+      setSendOtpError(data.error || "Failed to send OTP");
+      setSendingEmailOtp(false);
+      return;
+    }
+     // ✅ OTP SENT
+    setEmailOtpStage(true);
+    setSendOtpError("");
+  } catch (err) {
+    setSendOtpError("Server error while sending OTP");
+  } finally {
+    setSendingEmailOtp(false);
+  }
+};
+
+const handleVerifyEmailOtp = async () => {
+  if (emailOtp.length !== 6) {
+    setEmailOtpError("Enter a valid 6-digit OTP");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:5000/auth/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: profileForm.email,
+        otp: emailOtp
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setEmailOtpError(data.error || "Invalid OTP");
+      return;
+    }
+
+    // ✅ OTP verified → now update profile
+    await submitProfileUpdate();
+  } catch (err) {
+    setEmailOtpError("Server error while verifying OTP");
+  }
+};
+
 
 const handleChangePassword = async () => {
   setPasswordError("");
@@ -751,6 +897,10 @@ useEffect(() => {
   textareaRef={textareaRef}
   adjustTextareaHeight={adjustTextareaHeight}
   sendMessage={sendMessage}
+  showScrollBtn = {showScrollBtn}
+  setShowScrollBtn = {setShowScrollBtn}
+  handleScroll = {handleScroll}
+  scrollToBottom = {scrollToBottom}
 />
 
      <ProfileModal
@@ -790,6 +940,18 @@ useEffect(() => {
   handleDeleteAccount={handleDeleteAccount}
 
   openEditProfile={openEditProfile}
+   emailOtpStage={emailOtpStage}
+   setEmailOtpStage = {setEmailOtpStage}
+  emailOtp={emailOtp}
+  setEmailOtp={setEmailOtp}
+  emailOtpError={emailOtpError}
+  handleVerifyEmailOtp={handleVerifyEmailOtp}
+  sendingEmailOtp={sendingEmailOtp}
+   profileError={profileError}
+  setProfileError={setProfileError}
+  handleProfileChange = {handleProfileChange }
+  sendOtpError = {sendOtpError}
+  setEmailOtpError = {setEmailOtpError}
 />
 
 {showToast && (

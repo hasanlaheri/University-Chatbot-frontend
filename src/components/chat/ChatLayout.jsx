@@ -58,7 +58,12 @@ export default function ChatLayout({
   setInput,
   textareaRef,
   adjustTextareaHeight,
-  sendMessage
+  sendMessage,
+
+  showScrollBtn,
+  setShowScrollBtn,
+  handleScroll,
+  scrollToBottom
 }) {
   return (
     <div
@@ -79,16 +84,6 @@ export default function ChatLayout({
           <h6 className="fw-bold mb-0 text-dark">
             {collegeName || "University AI Assistant"}
           </h6>
-          <div className="d-flex align-items-center gap-2">
-            <span
-              className={`dot ${
-                isFilterIncomplete ? "bg-warning" : "bg-success"
-              }`}
-            />
-            <small className="text-muted" style={{ fontSize: "12px" }}>
-              {isFilterIncomplete ? "Awaiting Context..." : "Ready to help"}
-            </small>
-          </div>
         </div>
    {/* TOGGLE BUTTON (Shifted to Right Side) */}
 <button
@@ -293,7 +288,10 @@ export default function ChatLayout({
 )}
 
       {/* ================= MESSAGES ================= */}
-      <div className="flex-grow-1 overflow-auto px-3 px-md-5 py-4 custom-chat-scrollbar">
+      <div 
+  className="flex-grow-1 overflow-auto px-3 px-md-5 py-4 custom-chat-scrollbar position-relative"
+  onScroll={handleScroll} // 1. Attach scroll listener
+>
         <div className="max-width-container mx-auto" style={{ maxWidth: 850 }}>
           {messages.length === 0 ? (
             <div className="d-flex flex-column align-items-center justify-content-center mt-5 opacity-50">
@@ -359,6 +357,30 @@ export default function ChatLayout({
               </div>
             ))
           )}
+          {showScrollBtn && (
+      <button
+        onClick={scrollToBottom}
+        className="btn shadow-sm d-flex align-items-center justify-content-center animate-fade-in scroll-to-bottom-btn"
+        style={{
+          position: "fixed",
+          bottom: "135px",     // Sits above the input bar
+          right: "40px",       // Anchored to the right side of the screen
+          width: "42px",
+          height: "42px",
+          borderRadius: "12px", // Matching your filter button's radius
+          backgroundColor: "#ffffff",
+          border: "1px solid #e2e8f0",
+          color: "#0d6efd",
+          zIndex: 1000,
+          transition: "all 0.2s ease-in-out"
+        }}
+      >
+        <FaChevronDown size={14} />
+      </button>
+    )}
+
+    <div ref={messagesEndRef} />
+  
 
 {currentSessionId && typingSessionId === currentSessionId && (
   <div className="d-flex mb-4 animate-fade-in align-items-center gap-3">

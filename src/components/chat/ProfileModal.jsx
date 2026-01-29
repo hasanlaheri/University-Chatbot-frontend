@@ -5,10 +5,13 @@ import {
   FaCalendarAlt,
   FaUserShield,
   FaLock,
-  FaTrash
+  FaTrash,
+  FaUser
 } from "react-icons/fa";
 
 import PasswordEye from "../PasswordEye";
+import EmailOtp from "../chat/EmailOtp";
+
 
 export default function ProfileModal({
   showProfile,
@@ -47,7 +50,18 @@ export default function ProfileModal({
   setConfirmAccountDelete,
   handleDeleteAccount,
 
-  openEditProfile
+  openEditProfile,
+  emailOtpStage,
+  emailOtp,
+  setEmailOtp,
+  emailOtpError,
+  handleVerifyEmailOtp,
+  sendingEmailOtp,
+  profileError,
+  handleProfileChange,
+  sendOtpError,
+  setEmailOtpStage,
+  setEmailOtpError
 }) {
   if (!showProfile) return null;
 
@@ -216,15 +230,17 @@ export default function ProfileModal({
                     Email Address
                   </label>
                   <input
-                    className="form-control bg-light border-0"
-                    value={profileForm.email}
-                    onChange={e =>
-                      setProfileForm({
-                        ...profileForm,
-                        email: e.target.value
-                      })
-                    }
-                  />
+  className={`form-control bg-light border-0 ${profileError ? "is-invalid" : ""}`}
+  value={profileForm.email}
+  onChange={e => handleProfileChange("email", e.target.value)}
+/>
+{sendOtpError && (
+  <div className="alert alert-danger py-2 small mt-2">
+    {sendOtpError}
+  </div>
+)}
+
+
                 </div>
 
                 <div className="col-12">
@@ -302,24 +318,70 @@ export default function ProfileModal({
               </div>
 
               <div className="d-flex gap-2 mt-4">
-                <button
-                  className="btn btn-primary w-100"
-                  onClick={handleSaveProfile}
-                >
-                  Save Changes
-                </button>
+               <button
+  className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
+  onClick={handleSaveProfile}
+  disabled={emailOtpStage || sendingEmailOtp}
+>
+  {sendingEmailOtp ? (
+    <>
+      <span
+        className="spinner-border spinner-border-sm"
+        role="status"
+        aria-hidden="true"
+      />
+    
+    </>
+  ) : (
+    "Save Changes"
+  )}
+</button>
+
+
                 <button
                   className="btn btn-light w-100"
                   onClick={() => setEditProfile(false)}
                 >
                   Cancel
                 </button>
+                {profileError && (
+  <div className="alert alert-danger mt-3 py-2 small text-center animate-fade-in">
+    {profileError}
+  </div>
+)}
+
               </div>
+<EmailOtp
+  show={emailOtpStage}
+  email={profileForm.email}
+  emailOtp={emailOtp}
+  setEmailOtp={setEmailOtp}
+  emailOtpError={emailOtpError}
+  handleVerifyEmailOtp={handleVerifyEmailOtp}
+  sendingEmailOtp={sendingEmailOtp}
+  onClose={() => {
+    setEmailOtpStage(false);
+    setEmailOtp("");
+    setEmailOtpError("");
+  }}
+/>
+
+
             </div>
           ) : (
             /* ================= VIEW PROFILE ================= */
             <div className="fade-in">
               <div className="profile-info-grid mb-4">
+                <div className="info-item">
+  <FaUser className="text-primary me-3" />
+  <div>
+    <div className="text-muted small">Full Name</div>
+    <div className="fw-semibold">
+      {user?.username || "—"}
+    </div>
+  </div>
+</div>
+
                 <div className="info-item">
                   <FaUniversity className="text-primary me-3" />
                   <div>
