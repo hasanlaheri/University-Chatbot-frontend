@@ -1,3 +1,4 @@
+/* ===================== IMPORTS ===================== */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,10 +12,11 @@ import {
   FaFileAlt,
   FaUserCircle,
   FaChartBar
-
 } from "react-icons/fa";
+
 import "../styles/faculty.css";
-import { Bar } from 'react-chartjs-2';
+
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,11 +25,17 @@ import {
   Title,
   Tooltip,
   Legend
-} from 'chart.js';
+} from "chart.js";
 
+/* ===================== CHART SETUP ===================== */
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+/* ===================== COMPONENT ===================== */
 export default function FacultyProfile() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  /* ===================== STATE ===================== */
   const [faculty, setFaculty] = useState({
     username: "",
     email: "",
@@ -36,274 +44,256 @@ export default function FacultyProfile() {
     subject: "",
     about: "",
     biodata: null,
-      biodata_path: null,
-  deleting_biodata: false,
-  deleted_success: false,
-  delete_error: false,
-  saving_profile: false 
-      
+    biodata_path: null,
+    deleting_biodata: false,
+    deleted_success: false,
+    delete_error: false,
+    saving_profile: false
   });
+
   const [editFaculty, setEditFaculty] = useState(null);
-const user = JSON.parse(localStorage.getItem("user"));
-  const [editMode, setEditMode] = useState(false); // ✅ toggle view/edit
-const [departments, setDepartments] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [departments, setDepartments] = useState([]);
 
-const [activeDate, setActiveDate] = useState(null);
-const [stats, setStats] = useState({ total: 0, categories: {}, timeline: [] });
+  const [activeDate, setActiveDate] = useState(null);
+  const [stats, setStats] = useState({ total: 0, categories: {}, timeline: [] });
 
-const generateColorFromString = (str) => {
-  // A curated list of professional, dashboard-ready colors (Tailwind 600 & 700 shades)
-  const palette = [
-    { bg: '#2563eb', border: '#1d4ed8' }, // Blue
-    { bg: '#7c3aed', border: '#6d28d9' }, // Violet
-    { bg: '#059669', border: '#047857' }, // Emerald
-    { bg: '#db2777', border: '#be185d' }, // Pink
-    { bg: '#ea580c', border: '#c2410c' }, // Orange
-    { bg: '#0891b2', border: '#0e7490' }, // Cyan
-    { bg: '#4f46e5', border: '#4338ca' }, // Indigo
-    { bg: '#0284c7', border: '#0369a1' }, // Sky
-  ];
+  /* ===================== HELPERS ===================== */
+  const generateColorFromString = (str) => {
+    const palette = [
+      { bg: "#2563eb", border: "#1d4ed8" },
+      { bg: "#7c3aed", border: "#6d28d9" },
+      { bg: "#059669", border: "#047857" },
+      { bg: "#db2777", border: "#be185d" },
+      { bg: "#ea580c", border: "#c2410c" },
+      { bg: "#0891b2", border: "#0e7490" },
+      { bg: "#4f46e5", border: "#4338ca" },
+      { bg: "#0284c7", border: "#0369a1" }
+    ];
 
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
 
-  // Use the hash to pick a consistent index from our professional palette
-  const index = Math.abs(hash) % palette.length;
-  return palette[index];
-};
-
-
-// 1. Logic for the Chart (Calculate this inside the component body)
-const categoriesFound = Object.keys(stats.categories || {});
-// Prepare datasets for Stacked Bar Chart with unique colors
-const timelineData = {
-  labels: stats.timeline?.map(t => t.date) || [],
- datasets: Object.keys(stats.categories || {}).map(cat => {
-  const color = generateColorFromString(cat);
-
-  return {
-    label: cat,
-    data: stats.timeline.map(t => t.details?.[cat] || 0),
-    backgroundColor: color.bg,
-    hoverBackgroundColor: color.border,
-    borderRadius: 4,
-    barThickness: 18
+    const index = Math.abs(hash) % palette.length;
+    return palette[index];
   };
-})
 
-};
+  /* ===================== CHART DATA ===================== */
+  const categoriesFound = Object.keys(stats.categories || {});
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  onHover: (event, chartElement) => {
-    // Check if the mouse is actually over a bar
-    if (chartElement && chartElement.length > 0) {
-      const index = chartElement[0].index;
-      const dataPoint = stats.timeline[index];
-      // ONLY update state if it's a different date to prevent re-render loops
-      if (activeDate?.date !== dataPoint.date) {
-        setActiveDate(dataPoint);
+  const timelineData = {
+    labels: stats.timeline?.map(t => t.date) || [],
+    datasets: Object.keys(stats.categories || {}).map(cat => {
+      const color = generateColorFromString(cat);
+
+      return {
+        label: cat,
+        data: stats.timeline.map(t => t.details?.[cat] || 0),
+        backgroundColor: color.bg,
+        hoverBackgroundColor: color.border,
+        borderRadius: 4,
+        barThickness: 18
+      };
+    })
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    onHover: (event, chartElement) => {
+      if (chartElement && chartElement.length > 0) {
+        const index = chartElement[0].index;
+        const dataPoint = stats.timeline[index];
+        if (activeDate?.date !== dataPoint.date) {
+          setActiveDate(dataPoint);
+        }
+      } else {
+        if (activeDate !== null) setActiveDate(null);
       }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: { mode: "index", intersect: false }
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+    }
+  };
+
+  /* ===================== EFFECTS ===================== */
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const collegeId = localStorage.getItem("college_id");
+
+    if (!token || !collegeId) return;
+
+    fetch(`http://localhost:5000/departments/${collegeId}`, {
+      method: "GET",
+      headers: {
+        Authorization: token,
+        "College-Id": collegeId
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setDepartments(data);
+        }
+      })
+      .catch(err => console.error("Error loading departments", err));
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login/faculty");
+      return;
+    }
+
+    fetch("http://127.0.0.1:5000/faculty/profile", {
+      method: "GET",
+      headers: { Authorization: token }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setFaculty(prev => ({ ...prev, ...data }));
+        }
+      })
+      .catch(err => console.error("Error fetching faculty:", err));
+
+    fetch("http://127.0.0.1:5000/faculty/profile/get", {
+      method: "GET",
+      headers: { Authorization: token }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setFaculty(prev => ({
+            ...prev,
+            subject: data.subject || "",
+            about: data.about || "",
+            biodata_path: data.biodata_path || null
+          }));
+        }
+      })
+      .catch(err => console.error("Error fetching facultyInfo:", err));
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/faculty/uploads/stats",
+          {
+            headers: {
+              Authorization: localStorage.getItem("token")
+            }
+          }
+        );
+
+        const data = await res.json();
+
+        setStats({
+          total: data.total || 0,
+          categories: data.categories || {},
+          timeline: data.timeline || []
+        });
+      } catch (err) {
+        console.error("Timeline fetch error", err);
+        setStats({ total: 0, categories: {}, timeline: [] });
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  /* ===================== HANDLERS ===================== */
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFaculty(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileUpload = (e) => {
+    setEditFaculty(prev => ({
+      ...prev,
+      biodata: e.target.files[0]
+    }));
+  };
+
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+
+    setFaculty(prev => ({ ...prev, saving_profile: true }));
+
+    const formData = new FormData();
+    formData.append("username", editFaculty.username);
+    formData.append("contact", editFaculty.contact);
+    formData.append("department", editFaculty.department);
+    formData.append("subject", editFaculty.subject);
+    formData.append("about", editFaculty.about);
+
+    if (editFaculty.biodata) {
+      formData.append("biodata", editFaculty.biodata);
+    }
+
+    const res = await fetch("http://127.0.0.1:5000/faculty/profile/save", {
+      method: "POST",
+      headers: { Authorization: token },
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!data.error) {
+      setFaculty(editFaculty);
+      setEditFaculty(null);
+      setEditMode(false);
     } else {
-      if (activeDate !== null) setActiveDate(null);
+      alert("Error saving profile: " + data.error);
+      setFaculty(prev => ({ ...prev, saving_profile: false }));
     }
-  },
-  plugins: {
-    legend: { display: false },
-    tooltip: { mode: 'index', intersect: false }
-  },
-  scales: {
-    x: { stacked: true, grid: { display: false } },
-    y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
-  }
-};
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  const collegeId = localStorage.getItem("college_id");
+  };
 
-  if (!token || !collegeId) return;
+  const handleDeleteBiodata = async () => {
+    const token = localStorage.getItem("token");
 
-  fetch(`http://localhost:5000/departments/${collegeId}`, {
-    method: "GET",
-    headers: {
-      Authorization: token,
-      "College-Id": collegeId
-    }
-  })
-    .then(res => res.json())
-    .then(data => {
+    setFaculty(prev => ({
+      ...prev,
+      deleting_biodata: true
+    }));
+
+    const res = await fetch("http://127.0.0.1:5000/faculty/profile/delete", {
+      method: "DELETE",
+      headers: { Authorization: token }
+    });
+
+    const data = await res.json();
+
+    setTimeout(() => {
       if (!data.error) {
-        setDepartments(data);
-      }
-    })
-    .catch(err => console.error("Error loading departments", err));
-}, []);
-
-  const navigate = useNavigate();
-
-useEffect(() => {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    navigate("/login/faculty");
-    return;
-  }
-
-  // 1) get base faculty data
-  fetch("http://127.0.0.1:5000/faculty/profile", {
-    method: "GET",
-    headers: {
-      "Authorization": token,
-    },
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (!data.error) {
-        setFaculty((prev) => ({ ...prev, ...data }));
-      }
-    })
-    .catch((err) => console.error("Error fetching faculty:", err));
-
-  // 2) get facultyInfo extended data
-  fetch("http://127.0.0.1:5000/faculty/profile/get", {
-    method: "GET",
-    headers: {
-      "Authorization": token,
-    },
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      if (!data.error) {
-        setFaculty((prev) => ({
+        setFaculty(prev => ({
           ...prev,
-          subject: data.subject || "",
-          about: data.about || "",
-          biodata_path: data.biodata_path || null
+          biodata: null,
+          biodata_path: null,
+          deleted_success: true,
+          deleting_biodata: false
+        }));
+      } else {
+        setFaculty(prev => ({
+          ...prev,
+          deleting_biodata: false,
+          delete_error: true
         }));
       }
-    })
-    .catch((err) => console.error("Error fetching facultyInfo:", err));
-
-}, [navigate]);
-
-
-
-  const handleEditChange = (e) => {
-  const { name, value } = e.target;
-  setEditFaculty(prev => ({ ...prev, [name]: value }));
-};
-
-
-const handleFileUpload = (e) => {
-  setEditFaculty(prev => ({
-    ...prev,
-    biodata: e.target.files[0]
-  }));
-};
-
-
-const handleSave = async () => {
-  const token = localStorage.getItem("token");
-
-  setFaculty(prev => ({ ...prev, saving_profile: true }));
-
-  const formData = new FormData();
-  formData.append("username", editFaculty.username);
-  formData.append("contact", editFaculty.contact);
-  formData.append("department", editFaculty.department);
-  formData.append("subject", editFaculty.subject);
-  formData.append("about", editFaculty.about);
-
-  if (editFaculty.biodata) {
-    formData.append("biodata", editFaculty.biodata);
-  }
-
-  const res = await fetch("http://127.0.0.1:5000/faculty/profile/save", {
-    method: "POST",
-    headers: { Authorization: token },
-    body: formData
-  });
-
-  const data = await res.json();
-
-  if (!data.error) {
-    setFaculty(editFaculty);   // ✅ commit
-    setEditFaculty(null);
-    setEditMode(false);
-  } else {
-    alert("Error saving profile: " + data.error);
-    setFaculty(prev => ({ ...prev, saving_profile: false }));
-  }
-};
-
-
-const handleDeleteBiodata = async () => {
-  const token = localStorage.getItem("token");
-
-  // show temporary "deleting…" UI
-  setFaculty((prev) => ({
-    ...prev,
-    deleting_biodata: true
-  }));
-
-  const res = await fetch("http://127.0.0.1:5000/faculty/profile/delete", {
-    method: "DELETE",
-    headers: { "Authorization": token }
-  });
-
-  const data = await res.json();
-
-  // little delay so animation feels nice
-  setTimeout(() => {
-    if (!data.error) {
-      setFaculty((prev) => ({
-        ...prev,
-        biodata: null,
-        biodata_path: null,
-        deleted_success: true,
-        deleting_biodata: false
-      }));
-    } else {
-      setFaculty((prev) => ({
-        ...prev,
-        deleting_biodata: false,
-        delete_error: true
-      }));
-    }
-  }, 600);
-};
-
-useEffect(() => {
-  const fetchStats = async () => {
-    try {
-      const res = await fetch(
-        "http://localhost:5000/faculty/uploads/stats",
-        {
-          headers: {
-            Authorization: localStorage.getItem("token")
-          }
-        }
-      );
-
-      const data = await res.json();
-
-      setStats({
-        total: data.total || 0,
-        categories: data.categories || {},
-        timeline: data.timeline || []
-      });
-
-    } catch (err) {
-      console.error("Timeline fetch error", err);
-      setStats({ total: 0, categories: {}, timeline: [] });
-    }
+    }, 600);
   };
 
-  fetchStats();
-}, []);
+
 
 
  return (

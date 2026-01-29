@@ -500,7 +500,7 @@ function ProfileField({ label, value, highlight }) {
     {/* DEPARTMENT */}
     <select
       className="form-select form-select-sm"
-      style={{ maxWidth: "250px", ...darkSelectStyle }}
+      style={{ maxWidth: "250px", ...darkSelectStyle, cursor: "pointer" }}
       value={departmentId}
       onChange={e => setDepartmentId(e.target.value)}
     >
@@ -515,7 +515,7 @@ function ProfileField({ label, value, highlight }) {
     {/* YEAR */}
     <select
       className="form-select form-select-sm"
-      style={{ maxWidth: "80px" , ...darkSelectStyle}}
+      style={{ maxWidth: "80px" , ...darkSelectStyle, cursor: "pointer"}}
       value={year}
       onChange={e => setYear(e.target.value)}
     >
@@ -530,7 +530,7 @@ function ProfileField({ label, value, highlight }) {
     {/* SEMESTER */}
     <select
       className="form-select form-select-sm"
-      style={{ maxWidth: "105px", ...darkSelectStyle }}
+      style={{ maxWidth: "105px", ...darkSelectStyle, cursor: "pointer" }}
       value={semester}
       onChange={e => setSemester(e.target.value)}
     >
@@ -547,7 +547,7 @@ function ProfileField({ label, value, highlight }) {
       <select
   disabled={!departmentId}
   className="form-select form-select-sm"
-  style={{ maxWidth: "240px", ...darkSelectStyle }}
+  style={{ maxWidth: "240px", ...darkSelectStyle, cursor: "pointer" }}
   value={selectedStudentId}
   onChange={e => setSelectedStudentId(e.target.value)}
 >

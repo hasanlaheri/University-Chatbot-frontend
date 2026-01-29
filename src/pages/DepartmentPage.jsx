@@ -10,175 +10,169 @@ import {
   FaFolderOpen
 } from "react-icons/fa";
 
-
-
 export default function DepartmentPage() {
   const navigate = useNavigate();
   const { depName } = useParams();
   const { state } = useLocation();
   const depCode = state?.depCode || "";
-const [activeTab, setActiveTab] = useState(() => {
-  return localStorage.getItem("dep_active_tab") || "users";
-});
 
+  /* -------------------- UI STATE -------------------- */
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("dep_active_tab") || "users";
+  });
 
+  const [showCodePopup, setShowCodePopup] = useState(false);
+  const [currentCodeInput, setCurrentCodeInput] = useState("");
+  const [newCodeInput, setNewCodeInput] = useState("");
+  const [showAccessOptions, setShowAccessOptions] = useState(false);
+  const [showFacultyPopup, setShowFacultyPopup] = useState(false);
+  const [facultyEmails, setFacultyEmails] = useState("");
+  const [savingFaculty, setSavingFaculty] = useState(false);
+
+  /* -------------------- DATA STATE -------------------- */
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
-const [filteredUsers, setFilteredUsers] = useState([]);
-const [userSearch, setUserSearch] = useState("");
-const [studentSearch, setStudentSearch] = useState("");
-const [facultySearch, setFacultySearch] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState([]);
 
-const [currentPage, setCurrentPage] = useState(1);
-const usersPerPage = 6;
-const indexOfLast = currentPage * usersPerPage;
-const indexOfFirst = indexOfLast - usersPerPage;
-const currentUsers = Array.isArray(filteredUsers)
-  ? filteredUsers.slice(indexOfFirst, indexOfLast)
-  : [];
+  /* -------------------- SEARCH STATE -------------------- */
+  const [userSearch, setUserSearch] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [facultySearch, setFacultySearch] = useState("");
 
+  /* -------------------- PAGINATION (USERS) -------------------- */
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 6;
+  const indexOfLast = currentPage * usersPerPage;
+  const indexOfFirst = indexOfLast - usersPerPage;
 
-const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const currentUsers = Array.isArray(filteredUsers)
+    ? filteredUsers.slice(indexOfFirst, indexOfLast)
+    : [];
 
-const students = users.filter(
-  u => u.role === "user" || u.role === "student"
-);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
-
-const faculty = users.filter(u => u.role === "faculty");
-
-const studentsFiltered = students.filter(s =>
-  s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
-  s.email.toLowerCase().includes(studentSearch.toLowerCase())
-);
-
-
-const facultyFiltered = faculty.filter(f =>
-  f.name.toLowerCase().includes(facultySearch.toLowerCase()) ||
-  f.email.toLowerCase().includes(facultySearch.toLowerCase())
-);
-
-// Students Pagination
-const [stuPage, setStuPage] = useState(1);
-const studentsPerPage = 10;
-const stuLast = stuPage * studentsPerPage;
-const stuFirst = stuLast - studentsPerPage;
-
-// Faculty Pagination
-const [facPage, setFacPage] = useState(1);
-const facultyPerPage = 10;
-const facLast = facPage * facultyPerPage;
-const facFirst = facLast - facultyPerPage;
-
-// Paginated data
-const currentStudents = studentsFiltered.slice(stuFirst, stuLast);
-const currentFaculty = facultyFiltered.slice(facFirst, facLast);
-
-const totalStuPages = Math.ceil(studentsFiltered.length / studentsPerPage);
-const totalFacPages = Math.ceil(facultyFiltered.length / facultyPerPage);
-
-const handleDeleteUser = async (id) => {
-  if (!window.confirm("Are you sure you want to delete this user?")) return;
-
-  try {
-    const res = await fetch(`http://localhost:5000/admin/user/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": localStorage.getItem("token"),
-        "College-Id": localStorage.getItem("college_id") // 🔥 REQUIRED
-      }
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      alert(data.message);
-      setUsers(prev => prev.filter(u => u.id !== id));
-    } else alert(data.error || "Delete failed");
-  } catch (err) {
-    alert("Error deleting user");
-  }
-};
-
-
-const [showCodePopup, setShowCodePopup] = useState(false);
-const [currentCodeInput, setCurrentCodeInput] = useState("");
-const [newCodeInput, setNewCodeInput] = useState("");
-const [showAccessOptions, setShowAccessOptions] = useState(false);
-const [showFacultyPopup, setShowFacultyPopup] = useState(false);
-const [facultyEmails, setFacultyEmails] = useState("");
-const [savingFaculty, setSavingFaculty] = useState(false);
-
-
-  // Fetch stats for this department
-useEffect(() => {
-  const depNameClean = decodeURIComponent(depName);
-  if (!depNameClean) return;
-
-  fetch(`http://localhost:5000/admin/stats/${depNameClean}`, {
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": localStorage.getItem("token"),
-      "College-Id": localStorage.getItem("college_id") // 🔥 REQUIRED
-    }
-  })
-    .then(res => res.json())
-    .then(data => setStats(data))
-    .catch(err => console.log("Stats fetch error:", err));
-}, [depName]);
-
-useEffect(() => {
-  localStorage.setItem("dep_active_tab", activeTab);
-}, [activeTab]);
-
-
-useEffect(() => {
-  const depNameClean = decodeURIComponent(depName);
-  if (!depNameClean) return;
-
-  fetch(`http://localhost:5000/admin/users/${depNameClean}`, {
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": localStorage.getItem("token"),
-      "College-Id": localStorage.getItem("college_id") // 🔥 REQUIRED
-    }
-  })
-    .then(res => res.json())
-    .then(data => {
-      const safe = Array.isArray(data) ? data : [];
-      setUsers(safe);
-      setFilteredUsers(safe);
-    })
-    .catch(err => console.log("Users fetch error:", err));
-}, [depName]);
-
-
-
-useEffect(() => {
-  const q = userSearch.toLowerCase();
-  const filtered = users.filter(u =>
-    u.name?.toLowerCase().includes(q) ||
-    u.email?.toLowerCase().includes(q) ||
-    u.role?.toLowerCase().includes(q)
+  /* -------------------- DERIVED DATA -------------------- */
+  const students = users.filter(
+    u => u.role === "user" || u.role === "student"
   );
-  setFilteredUsers(filtered);
-  setCurrentPage(1);
-}, [userSearch, users]);
 
+  const faculty = users.filter(u => u.role === "faculty");
 
-useEffect(() => {
-  const dropdown = document.getElementById("settingsDropdown");
+  const studentsFiltered = students.filter(s =>
+    s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+    s.email.toLowerCase().includes(studentSearch.toLowerCase())
+  );
 
-  if (!dropdown) return;
+  const facultyFiltered = faculty.filter(f =>
+    f.name.toLowerCase().includes(facultySearch.toLowerCase()) ||
+    f.email.toLowerCase().includes(facultySearch.toLowerCase())
+  );
 
-  const hideMenu = () => setShowAccessOptions(false);
+  /* -------------------- PAGINATION (STUDENTS) -------------------- */
+  const [stuPage, setStuPage] = useState(1);
+  const studentsPerPage = 10;
+  const stuLast = stuPage * studentsPerPage;
+  const stuFirst = stuLast - studentsPerPage;
+  const currentStudents = studentsFiltered.slice(stuFirst, stuLast);
+  const totalStuPages = Math.ceil(studentsFiltered.length / studentsPerPage);
 
-  dropdown.addEventListener("hidden.bs.dropdown", hideMenu);
+  /* -------------------- PAGINATION (FACULTY) -------------------- */
+  const [facPage, setFacPage] = useState(1);
+  const facultyPerPage = 10;
+  const facLast = facPage * facultyPerPage;
+  const facFirst = facLast - facultyPerPage;
+  const currentFaculty = facultyFiltered.slice(facFirst, facLast);
+  const totalFacPages = Math.ceil(facultyFiltered.length / facultyPerPage);
 
-  return () => {
-    dropdown.removeEventListener("hidden.bs.dropdown", hideMenu);
+  /* -------------------- HANDLERS -------------------- */
+  const handleDeleteUser = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/admin/user/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": localStorage.getItem("token"),
+          "College-Id": localStorage.getItem("college_id")
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message);
+        setUsers(prev => prev.filter(u => u.id !== id));
+      } else alert(data.error || "Delete failed");
+    } catch (err) {
+      alert("Error deleting user");
+    }
   };
-}, []);
+
+  /* -------------------- EFFECTS -------------------- */
+  useEffect(() => {
+    const depNameClean = decodeURIComponent(depName);
+    if (!depNameClean) return;
+
+    fetch(`http://localhost:5000/admin/stats/${depNameClean}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": localStorage.getItem("token"),
+        "College-Id": localStorage.getItem("college_id")
+      }
+    })
+      .then(res => res.json())
+      .then(data => setStats(data))
+      .catch(err => console.log("Stats fetch error:", err));
+  }, [depName]);
+
+  useEffect(() => {
+    localStorage.setItem("dep_active_tab", activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    const depNameClean = decodeURIComponent(depName);
+    if (!depNameClean) return;
+
+    fetch(`http://localhost:5000/admin/users/${depNameClean}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": localStorage.getItem("token"),
+        "College-Id": localStorage.getItem("college_id")
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        const safe = Array.isArray(data) ? data : [];
+        setUsers(safe);
+        setFilteredUsers(safe);
+      })
+      .catch(err => console.log("Users fetch error:", err));
+  }, [depName]);
+
+  useEffect(() => {
+    const q = userSearch.toLowerCase();
+    const filtered = users.filter(u =>
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.role?.toLowerCase().includes(q)
+    );
+    setFilteredUsers(filtered);
+    setCurrentPage(1);
+  }, [userSearch, users]);
+
+  useEffect(() => {
+    const dropdown = document.getElementById("settingsDropdown");
+    if (!dropdown) return;
+
+    const hideMenu = () => setShowAccessOptions(false);
+    dropdown.addEventListener("hidden.bs.dropdown", hideMenu);
+
+    return () => {
+      dropdown.removeEventListener("hidden.bs.dropdown", hideMenu);
+    };
+  }, []);
+
+
 
   return (
   <div

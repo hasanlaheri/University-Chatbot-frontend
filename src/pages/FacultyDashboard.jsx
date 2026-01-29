@@ -1,5 +1,9 @@
+/* ===================== IMPORTS ===================== */
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+
 import {
   FaUserCircle,
   FaPlusCircle,
@@ -9,236 +13,286 @@ import {
   FaSignOutAlt,
   FaEye,
   FaTrashAlt,
-  FaTimes ,
+  FaTimes,
   FaCheck,
   FaFilter,
   FaSyncAlt,
-  FaLock ,
+  FaLock,
   FaFolderOpen,
-  FaEyeSlash 
+  FaEyeSlash
 } from "react-icons/fa";
+
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useLocation } from "react-router-dom";
-import { ToastContainer,toast } from "react-toastify";
-import { useSearchParams } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+
 import PasswordEye from "../components/PasswordEye";
 import "../styles/faculty.css";
 
+/* ===================== COMPONENT ===================== */
 function FacultyDashboard() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user"));
+
+  /* ===================== CORE STATE ===================== */
   const [uploads, setUploads] = useState([]);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const navigate = useNavigate();
- const [showFilter, setShowFilter] = useState(false);
-const [stats, setStats] = useState({
-  total: 0,
-  categories: {}
-});
-const [updatingVisibilityIds, setUpdatingVisibilityIds] = useState(new Set());
+  const [showFilter, setShowFilter] = useState(false);
 
-
-// college settings
-const [settings, setSettings] = useState(null);
-// Draft (UI) filters
-const [draftYear, setDraftYear] = useState("");
-const [draftSem, setDraftSem] = useState("");
-const [draftCategory, setDraftCategory] = useState("");
-const [draftSubject, setDraftSubject] = useState("");
-const [facultySubjects, setFacultySubjects] = useState([]);
-const [draftSearch, setDraftSearch] = useState("");
-const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-const [deletingIds, setDeletingIds] = useState(new Set());
-const [showCurrent, setShowCurrent] = useState(false);
-const [showNew, setShowNew] = useState(false);
-const [showConfirm, setShowConfirm] = useState(false);
-const resetPasswordForm = () => {
-  setPasswordForm({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
+  /* ===================== STATS ===================== */
+  const [stats, setStats] = useState({
+    total: 0,
+    categories: {}
   });
-  setPasswordError("");
-};
 
-// Applied filters (API depends on these)
-const [appliedFilters, setAppliedFilters] = useState(null);
+  const [updatingVisibilityIds, setUpdatingVisibilityIds] = useState(new Set());
 
-useEffect(() => {
-  if (!appliedFilters) return;
+  /* ===================== COLLEGE SETTINGS ===================== */
+  const [settings, setSettings] = useState(null);
 
-  const delay = setTimeout(() => {
-    setAppliedFilters(prev => ({
-      ...prev,
-      search: draftSearch
-    }));
-  }, 400); // debounce
+  /* ===================== FILTER (DRAFT UI) ===================== */
+  const [draftYear, setDraftYear] = useState("");
+  const [draftSem, setDraftSem] = useState("");
+  const [draftCategory, setDraftCategory] = useState("");
+  const [draftSubject, setDraftSubject] = useState("");
+  const [draftSearch, setDraftSearch] = useState("");
 
-  return () => clearTimeout(delay);
-}, [draftSearch]);
+  const [facultySubjects, setFacultySubjects] = useState([]);
 
-useEffect(() => {
-  async function loadStats() {
-    try {
-      const res = await fetch(
-        "http://localhost:5000/faculty/uploads/stats",
-        {
-          headers: { Authorization: localStorage.getItem("token") }
+  /* ===================== FILTER (APPLIED) ===================== */
+  const [appliedFilters, setAppliedFilters] = useState(null);
+
+  /* ===================== DELETE / VISIBILITY UI ===================== */
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deletingIds, setDeletingIds] = useState(new Set());
+
+  /* ===================== PASSWORD UI ===================== */
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const resetPasswordForm = () => {
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: ""
+    });
+    setPasswordError("");
+  };
+
+  /* ===================== EFFECTS ===================== */
+
+  // Debounced search → applied filters
+  useEffect(() => {
+    if (!appliedFilters) return;
+
+    const delay = setTimeout(() => {
+      setAppliedFilters(prev => ({
+        ...prev,
+        search: draftSearch
+      }));
+    }, 400);
+
+    return () => clearTimeout(delay);
+  }, [draftSearch]);
+
+  // Load upload stats
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/faculty/uploads/stats",
+          {
+            headers: { Authorization: localStorage.getItem("token") }
+          }
+        );
+
+        if (res.status === 401) {
+          localStorage.clear();
+          navigate("/");
+          return;
         }
-      );
 
-      if (res.status === 401) {
-        localStorage.clear();
-        navigate("/");
-        return;
+        const data = await res.json();
+        setStats(data);
+      } catch (err) {
+        console.error("Stats load failed", err);
       }
-
-      const data = await res.json();
-      setStats(data);
-    } catch (err) {
-      console.error("Stats load failed", err);
     }
-  }
 
-  loadStats();
-}, []);
+    loadStats();
+  }, []);
 
-useEffect(() => {
-  if (!draftYear || !draftSem) {
-    setFacultySubjects([]);
-    return;
-  }
-
-  fetch(
-    `http://localhost:5000/faculty/uploads/subjects?year=${draftYear}&semester=${draftSem}`,
-    {
-      headers: { Authorization: localStorage.getItem("token") }
-    }
-  )
-    .then(res => res.json())
-    .then(data => {
-      setFacultySubjects(data || []);
-    })
-    .catch(err => {
-      console.error("Failed to load subjects", err);
+  // Load subjects for faculty
+  useEffect(() => {
+    if (!draftYear || !draftSem) {
       setFacultySubjects([]);
-    });
+      return;
+    }
 
-}, [draftYear, draftSem]);
+    fetch(
+      `http://localhost:5000/faculty/uploads/subjects?year=${draftYear}&semester=${draftSem}`,
+      {
+        headers: { Authorization: localStorage.getItem("token") }
+      }
+    )
+      .then(res => res.json())
+      .then(data => {
+        setFacultySubjects(data || []);
+      })
+      .catch(err => {
+        console.error("Failed to load subjects", err);
+        setFacultySubjects([]);
+      });
 
-  
-const location = useLocation();
+  }, [draftYear, draftSem]);
 
-useEffect(() => {
-  if (location.state?.uploadResult === "success") {
-    toast.success("Upload successful ✅");
-  }
+  // Upload result toast
+  useEffect(() => {
+    if (location.state?.uploadResult === "success") {
+      toast.success("Upload successful ✅");
+    }
 
-  if (location.state?.uploadResult === "partial") {
-    toast.warning(
-      "Uploaded partially ⚠️"
-    );
-  }
-}, [location.state]);
-useEffect(() => {
-  const collegeId = localStorage.getItem("college_id");
-  if (!collegeId) return;
+    if (location.state?.uploadResult === "partial") {
+      toast.warning("Uploaded partially ⚠️");
+    }
+  }, [location.state]);
 
-  fetch(`http://localhost:5000/college/settings/${collegeId}`)
-    .then(res => res.json())
-    .then(data => setSettings(data))
-    .catch(err => console.error("Settings load failed", err));
-}, []);
+  // Load college settings
+  useEffect(() => {
+    const collegeId = localStorage.getItem("college_id");
+    if (!collegeId) return;
 
+    fetch(`http://localhost:5000/college/settings/${collegeId}`)
+      .then(res => res.json())
+      .then(data => setSettings(data))
+      .catch(err => console.error("Settings load failed", err));
+  }, []);
 
-useEffect(() => {
-  // 🚫 Do nothing until filters are applied
-  if (!appliedFilters) return;
+  // Load uploads (after filters applied)
+  useEffect(() => {
+    if (!appliedFilters) return;
 
-  async function load() {
+    async function load() {
+      try {
+        const params = new URLSearchParams();
+
+        if (appliedFilters.year) params.append("year", appliedFilters.year);
+        if (appliedFilters.semester) params.append("semester", appliedFilters.semester);
+        if (appliedFilters.category) params.append("category", appliedFilters.category);
+        if (appliedFilters.search) params.append("search", appliedFilters.search);
+        if (appliedFilters.subject) params.append("subject", appliedFilters.subject);
+
+        const res = await fetch(
+          `http://localhost:5000/faculty/uploads?${params.toString()}`,
+          {
+            headers: { Authorization: localStorage.getItem("token") }
+          }
+        );
+
+        if (res.status === 401) {
+          localStorage.clear();
+          navigate("/");
+          return;
+        }
+
+        const data = await res.json();
+        setUploads(data);
+      } catch (err) {
+        console.error("Failed to load uploads", err);
+      }
+    }
+
+    load();
+  }, [appliedFilters]);
+
+  /* ===================== ACTIONS ===================== */
+
+  const toggleVisibility = async (upload) => {
+    const newVisibility =
+      upload.visibility === "public" ? "private" : "public";
+
+    setUpdatingVisibilityIds(prev => new Set(prev).add(upload.id));
+
     try {
-      const params = new URLSearchParams();
-
-      if (appliedFilters.year) params.append("year", appliedFilters.year);
-      if (appliedFilters.semester) params.append("semester", appliedFilters.semester);
-      if (appliedFilters.category) params.append("category", appliedFilters.category);
-      if (appliedFilters.search) params.append("search", appliedFilters.search);
-      if (appliedFilters.subject) params.append("subject", appliedFilters.subject);
-
       const res = await fetch(
-        `http://localhost:5000/faculty/uploads?${params.toString()}`,
+        `http://localhost:5000/faculty/upload/${upload.id}/visibility`,
         {
-          headers: { Authorization: localStorage.getItem("token") }
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: localStorage.getItem("token"),
+          },
+          body: JSON.stringify({ visibility: newVisibility }),
         }
       );
 
-      if (res.status === 401) {
-        localStorage.clear();
-        navigate("/");
-        return;
-      }
-
       const data = await res.json();
-      setUploads(data);
+      if (!res.ok) throw new Error(data.error || "Failed");
+
+      setUploads(prev =>
+        prev.map(u =>
+          u.id === upload.id ? { ...u, visibility: newVisibility } : u
+        )
+      );
+
+      toast.success(`Set to ${newVisibility}`);
     } catch (err) {
-      console.error("Failed to load uploads", err);
+      console.error(err);
+      toast.error("Failed to update visibility");
+    } finally {
+      setUpdatingVisibilityIds(prev => {
+        const copy = new Set(prev);
+        copy.delete(upload.id);
+        return copy;
+      });
     }
-  }
+  };
 
-  load();
-}, [appliedFilters]);
 
-const toggleVisibility = async (upload) => {
-  const newVisibility =
-    upload.visibility === "public" ? "private" : "public";
 
-  // ➕ add this id to loading set
-  setUpdatingVisibilityIds(prev => new Set(prev).add(upload.id));
 
-  try {
-    const res = await fetch(
-      `http://localhost:5000/faculty/upload/${upload.id}/visibility`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: localStorage.getItem("token"),
-        },
-        body: JSON.stringify({ visibility: newVisibility }),
-      }
-    );
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed");
+/* ===================== STATE ===================== */
 
-    // ✅ update UI
-    setUploads(prev =>
-      prev.map(u =>
-        u.id === upload.id ? { ...u, visibility: newVisibility } : u
-      )
-    );
+const [showChangePassword, setShowChangePassword] = useState(false);
 
-    toast.success(`Set to ${newVisibility}`);
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to update visibility");
-  } finally {
-    // ➖ remove this id from loading set
-    setUpdatingVisibilityIds(prev => {
-      const copy = new Set(prev);
-      copy.delete(upload.id);
-      return copy;
+const [passwordForm, setPasswordForm] = useState({
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: ""
+});
+
+const [passwordError, setPasswordError] = useState("");
+const [changingPassword, setChangingPassword] = useState(false);
+
+const [searchParams] = useSearchParams();
+
+/* ===================== EFFECTS ===================== */
+
+useEffect(() => {
+  const year = searchParams.get("year");
+  const semester = searchParams.get("semester");
+  const category = searchParams.get("category");
+  const search = searchParams.get("search");
+
+  if (year || semester || category || search) {
+    setAppliedFilters({
+      year: year || "",
+      semester: semester || "",
+      category: category || "",
+      search: search || ""
     });
   }
-};
+}, []);
 
-
+/* ===================== PASSWORD ===================== */
 
 const handleChangePassword = async () => {
   setPasswordError("");
 
   const { currentPassword, newPassword, confirmPassword } = passwordForm;
 
-  // 🔐 Inline validation
   if (!currentPassword || !newPassword || !confirmPassword) {
     setPasswordError("All fields are required");
     return;
@@ -279,7 +333,6 @@ const handleChangePassword = async () => {
       return;
     }
 
-    // ✅ SUCCESS
     toast.success("Password changed successfully 🔐");
 
     setShowChangePassword(false);
@@ -297,66 +350,28 @@ const handleChangePassword = async () => {
   }
 };
 
-
-const [searchParams] = useSearchParams();
-
-useEffect(() => {
-  const year = searchParams.get("year");
-  const semester = searchParams.get("semester");
-  const category = searchParams.get("category");
-  const search = searchParams.get("search");
-
-  if (year || semester || category || search) {
-    setAppliedFilters({
-      year: year || "",
-      semester: semester || "",
-      category: category || "",
-      search: search || ""
-    });
-  }
-}, []);
-
-const [showChangePassword, setShowChangePassword] = useState(false);
-
-const [passwordForm, setPasswordForm] = useState({
-  currentPassword: "",
-  newPassword: "",
-  confirmPassword: ""
-});
-
-const [passwordError, setPasswordError] = useState("");
-const [changingPassword, setChangingPassword] = useState(false);
-
+/* ===================== FILE ACTIONS ===================== */
 
 const viewFile = async (id) => {
   const token = localStorage.getItem("token");
 
- const res = await fetch(`http://localhost:5000/faculty/file/${id}`, {
-  headers: { Authorization: localStorage.getItem("token") }
-});
+  const res = await fetch(`http://localhost:5000/faculty/file/${id}`, {
+    headers: { Authorization: localStorage.getItem("token") }
+  });
 
-if (res.status === 401) {
-  alert("⚠ Your account has been deleted. Logging out...");
-  localStorage.clear();
-  setTimeout(() => navigate("/"), 800);
-  return;
-}
-
+  if (res.status === 401) {
+    alert("⚠ Your account has been deleted. Logging out...");
+    localStorage.clear();
+    setTimeout(() => navigate("/"), 800);
+    return;
+  }
 
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   window.open(url, "_blank");
 };
 
-  const handleLogout = () => {
-    setIsLoggingOut(true);
-    setTimeout(() => {
-      localStorage.clear();
-      navigate("/");
-    }, 1500);
-  };
 async function handleDelete(id) {
-  // ➕ add id to deleting set
   setDeletingIds(prev => new Set(prev).add(id));
 
   try {
@@ -379,14 +394,12 @@ async function handleDelete(id) {
       throw new Error("Delete failed");
     }
 
-    // ✅ remove row from UI
     setUploads(prev => prev.filter(u => u.id !== id));
 
   } catch (err) {
     console.error(err);
     alert("Failed to delete file");
   } finally {
-    // ➖ remove id from deleting set
     setDeletingIds(prev => {
       const copy = new Set(prev);
       copy.delete(id);
@@ -396,6 +409,16 @@ async function handleDelete(id) {
     setConfirmDeleteId(null);
   }
 }
+
+/* ===================== AUTH ===================== */
+
+const handleLogout = () => {
+  setIsLoggingOut(true);
+  setTimeout(() => {
+    localStorage.clear();
+    navigate("/");
+  }, 1500);
+};
 
 
 

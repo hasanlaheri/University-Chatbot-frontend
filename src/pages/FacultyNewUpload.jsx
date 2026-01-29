@@ -1,111 +1,113 @@
-import React, { useState,useEffect } from "react";
+/* ===================== IMPORTS ===================== */
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCloudUploadAlt } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/faculty.css";
 
+/* ===================== COMPONENT ===================== */
 export default function FacultyUpload() {
-  const [departments, setDepartments] = useState([]);
-const [settings, setSettings] = useState(null);
-const [facultySubject, setFacultySubject] = useState("");
   const navigate = useNavigate();
-const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  /* ===================== STATE ===================== */
+  const [departments, setDepartments] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [facultySubject, setFacultySubject] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     department_id: "",
     category: "",
     year: "",
     semester: "",
     subject: "",
-    visibility: "public", 
+    visibility: "public",
     file: null
   });
 
- const [loading, setLoading] = useState(false);
+  /* ===================== DERIVED DATA ===================== */
+  const selectedDepartment = departments.find(
+    d => String(d.id) === String(form.department_id)
+  );
 
-const handleUpload = async () => {
-  if (!form.department_id || !form.file) {
-  toast.error("Please fill all required fields");
-  return;
-}
+  const isUnitDepartment = selectedDepartment?.type === "unit";
+  const disableYearSem = isUnitDepartment;
 
-if (!isUnitDepartment) {
-  if (!form.category || !form.year || !form.semester) {
-    toast.error("Please select year & semester");
-    return;
-  }
-}
-
-
-  setLoading(true);
-
-  const fd = new FormData();
-  fd.append("department_id", form.department_id);
-  fd.append("category", form.category);
-  fd.append("year", form.year);
-  fd.append("semester", form.semester);
-  fd.append("visibility", form.visibility);
-  fd.append("file", form.file);
-  fd.append("subject", form.subject);
-
-  try {
-    const res = await fetch("http://localhost:5000/faculty/upload", {
-      method: "POST",
-      headers: {
-        Authorization: localStorage.getItem("token")
-      },
-      body: fd
-    });
-
-    const data = await res.json();
-
- if (data.success) {
-  navigate(`/${user.college_code.toLowerCase()}/${user.role}`, {
-    state: {
-      uploadResult: data.indexed ? "success" : "partial"
-    }
-  });
-
-
-
-    } else {
-      toast.error(data.error || "Upload failed");
-    }
-  } catch (err) {
-    console.error(err);
-    toast.error("Server error");
-  } finally {
-    setLoading(false);
-  }
-};
-const selectedDepartment = departments.find(
-  d => String(d.id) === String(form.department_id)
-);
-
-const isUnitDepartment = selectedDepartment?.type === "unit";
-
-
-const handleChange = (e) => {
-  const { name, value } = e.target;
-
-  if (name === "department_id") {
-    const dept = departments.find(d => String(d.id) === String(value));
-
-    if (dept?.type === "unit") {
-      setForm({
-        ...form,
-        department_id: value,
-        year: "",
-        semester: "",
-        category: ""
-      });
+  /* ===================== HANDLERS ===================== */
+  const handleUpload = async () => {
+    if (!form.department_id || !form.file) {
+      toast.error("Please fill all required fields");
       return;
     }
-  }
 
-  setForm({ ...form, [name]: value });
-};
+    if (!isUnitDepartment) {
+      if (!form.category || !form.year || !form.semester) {
+        toast.error("Please select year & semester");
+        return;
+      }
+    }
 
+    setLoading(true);
+
+    const fd = new FormData();
+    fd.append("department_id", form.department_id);
+    fd.append("category", form.category);
+    fd.append("year", form.year);
+    fd.append("semester", form.semester);
+    fd.append("visibility", form.visibility);
+    fd.append("file", form.file);
+    fd.append("subject", form.subject);
+
+    try {
+      const res = await fetch("http://localhost:5000/faculty/upload", {
+        method: "POST",
+        headers: {
+          Authorization: localStorage.getItem("token")
+        },
+        body: fd
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        navigate(`/${user.college_code.toLowerCase()}/${user.role}`, {
+          state: {
+            uploadResult: data.indexed ? "success" : "partial"
+          }
+        });
+      } else {
+        toast.error(data.error || "Upload failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Server error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "department_id") {
+      const dept = departments.find(d => String(d.id) === String(value));
+
+      if (dept?.type === "unit") {
+        setForm({
+          ...form,
+          department_id: value,
+          year: "",
+          semester: "",
+          category: ""
+        });
+        return;
+      }
+    }
+
+    setForm({ ...form, [name]: value });
+  };
 
   const handleFile = (e) => {
     const f = e.target.files[0];
@@ -133,42 +135,42 @@ const handleChange = (e) => {
 
     setForm({ ...form, file: f });
   };
-const disableYearSem = isUnitDepartment;
-const removeFile = () => {
-  setForm({ ...form, file: null });
-};
 
-useEffect(() => {
-  const collegeId = localStorage.getItem("college_id");
-  if (!collegeId) return;
+  const removeFile = () => {
+    setForm({ ...form, file: null });
+  };
 
-  // Load departments
-  fetch(`http://localhost:5000/departments/${collegeId}`)
-    .then(res => res.json())
-    .then(data => setDepartments(data))
-    .catch(err => console.error("Failed to load departments:", err));
+  /* ===================== EFFECTS ===================== */
+  useEffect(() => {
+    const collegeId = localStorage.getItem("college_id");
+    if (!collegeId) return;
 
-  // Load college settings
-  fetch(`http://localhost:5000/college/settings/${collegeId}`)
-    .then(res => res.json())
-    .then(data => setSettings(data))
-    .catch(err => console.error("Failed to load settings:", err));
+    fetch(`http://localhost:5000/departments/${collegeId}`)
+      .then(res => res.json())
+      .then(data => setDepartments(data))
+      .catch(err => console.error("Failed to load departments:", err));
+
+    fetch(`http://localhost:5000/college/settings/${collegeId}`)
+      .then(res => res.json())
+      .then(data => setSettings(data))
+      .catch(err => console.error("Failed to load settings:", err));
 
     fetch("http://localhost:5000/faculty/profile/get", {
-    headers: { Authorization: localStorage.getItem("token") }
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.subject) {
-        // Split "Math, Physics" into ["Math", "Physics"]
-        const subjectArray = data.subject.split(",").map(s => s.trim()).filter(Boolean);
-        setFacultySubject(subjectArray); // Change state to hold an array
-      } else {
-        setFacultySubject([]);
-      }
+      headers: { Authorization: localStorage.getItem("token") }
     })
-    .catch(err => console.error("Failed to load faculty profile:", err));
-}, []);
+      .then(res => res.json())
+      .then(data => {
+        if (data.subject) {
+          const subjectArray = data.subject.split(",").map(s => s.trim()).filter(Boolean);
+          setFacultySubject(subjectArray);
+        } else {
+          setFacultySubject([]);
+        }
+      })
+      .catch(err => console.error("Failed to load faculty profile:", err));
+  }, []);
+
+
 
   return (
   <div
